@@ -1,1 +1,157 @@
 @import "tailwindcss";
+
+/*
+ * Marginalia design tokens.
+ *
+ * Committed to a single light "paper" theme: the product is about reading
+ * source documents, so the page itself reads like one. Ink-blue text on
+ * near-white paper, one marker-yellow accent used for highlights and
+ * citation chips — the researcher's highlighter.
+ */
+@theme {
+  --color-paper: #fafaf6;
+  --color-card: #ffffff;
+  --color-ink: #17293b;
+  --color-ink-soft: #4b5a69;
+  --color-line: #e0e0d6;
+  --color-mark: #ffe14d;
+  --color-mark-deep: #f5c500;
+  --color-mark-soft: #fff3b0;
+
+  --font-display: "Newsreader Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Public Sans Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-mark);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  mark {
+    background: linear-gradient(
+      transparent 15%,
+      var(--color-mark) 15%,
+      var(--color-mark) 90%,
+      transparent 90%
+    );
+    color: inherit;
+    padding-inline: 0.08em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Superscript citation chip — the page's own footnote apparatus. */
+  .cite {
+    @apply font-mono font-medium no-underline whitespace-nowrap align-super;
+    font-size: 0.62em;
+    background-color: var(--color-mark);
+    color: var(--color-ink);
+    border-radius: 4px;
+    padding: 0.05em 0.5em;
+    transition: background-color 150ms ease;
+  }
+
+  .cite:hover {
+    background-color: var(--color-mark-deep);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-sans text-sm font-semibold;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease;
+  }
+
+  .btn-primary {
+    @apply bg-ink text-paper;
+  }
+
+  .btn-primary:hover {
+    background-color: #2a415c;
+  }
+
+  .btn-ghost {
+    @apply text-ink;
+    border: 1px solid var(--color-line);
+    background-color: var(--color-card);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--color-ink-soft);
+  }
+
+  .eyebrow {
+    @apply font-mono text-xs font-medium tracking-[0.18em] uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  /* Demo: hovering/focusing a citation chip highlights the cited passage. */
+  .demo [data-passage] {
+    border-radius: 3px;
+    transition: background-color 200ms ease;
+  }
+
+  .demo:has([data-cite="1"]:hover) [data-passage="1"],
+  .demo:has([data-cite="1"]:focus-visible) [data-passage="1"],
+  .demo:has([data-cite="2"]:hover) [data-passage="2"],
+  .demo:has([data-cite="2"]:focus-visible) [data-passage="2"],
+  .demo [data-passage]:target {
+    background-color: var(--color-mark);
+  }
+
+  /* Entrance rise for the hero only; disabled under reduced motion above. */
+  .rise {
+    animation: rise 0.6s ease-out both;
+  }
+
+  .rise-delay-1 {
+    animation-delay: 0.1s;
+  }
+
+  .rise-delay-2 {
+    animation-delay: 0.2s;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,66 @@
+---
+const inPrototype = [
+  "Notebooks with strict isolation",
+  "PDF, text & Markdown, pasted text, web URLs",
+  "Source selection per question",
+  "Grounded chat with streamed answers",
+  "Citations that open the exact passage",
+  "Notes, with citations preserved",
+  "Single-narrator audio overviews (in development)",
+];
+
+const notYet = [
+  "Web research & source discovery",
+  "Sharing & collaboration",
+  "Mind maps, flashcards, quizzes",
+  "Two-host or interactive audio",
+  "YouTube, Drive & audio-file import",
+  "Multi-language output",
+];
+---
+
+<section id="scope" class="border-line border-y">
+  <div class="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+    <p class="eyebrow mb-4">Scope</p>
+    <h2 class="font-display max-w-xl text-4xl leading-tight font-medium tracking-tight sm:text-5xl">
+      Small on purpose
+    </h2>
+    <p class="text-ink-soft mt-5 max-w-2xl leading-relaxed">
+      Marginalia is a working prototype, built in the open. The first milestone is the loop above —
+      notebooks → sources → grounded chat → citations → notes — done properly, before anything
+      else.<a href="#fn-3" class="cite" aria-label="Footnote 3">3</a> Features that aren't built
+      yet aren't sold on this page; the cut list is public, and so is every architectural
+      decision.
+    </p>
+    <div class="mt-10 grid gap-6 sm:grid-cols-2">
+      <div class="bg-card border-line rounded-xl border p-6">
+        <h3 class="font-mono text-sm font-medium tracking-[0.14em] uppercase">In the prototype</h3>
+        <ul class="mt-4 space-y-2.5 text-[0.95rem]">
+          {
+            inPrototype.map((item) => (
+              <li class="flex gap-2.5">
+                <span aria-hidden="true" class="bg-mark mt-2 h-2 w-2 shrink-0 rounded-full" />
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="rounded-xl border border-dashed border-[#c9c9bd] p-6">
+        <h3 class="font-mono text-ink-soft text-sm font-medium tracking-[0.14em] uppercase">
+          Not yet — and not pretended
+        </h3>
+        <ul class="text-ink-soft mt-4 space-y-2.5 text-[0.95rem]">
+          {
+            notYet.map((item) => (
+              <li class="flex gap-2.5">
+                <span aria-hidden="true" class="border-ink-soft mt-2 h-2 w-2 shrink-0 rounded-full border" />
+                <span>{item}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
