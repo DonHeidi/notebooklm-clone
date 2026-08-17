@@ -1,0 +1,16 @@
+# BuildKit per-Dockerfile ignore (applies when building with -f apps/webapp/Dockerfile).
+# The build context is the repo root — keep it lean and secret-free.
+.git
+.worktrees
+**/node_modules
+**/.next
+**/dist
+**/.astro
+.env
+.env.*
+!.env.schema
+infrastructure/.terraform
+infrastructure/*.tfstate*
+supabase/.branches
+supabase/.temp
+handovers
