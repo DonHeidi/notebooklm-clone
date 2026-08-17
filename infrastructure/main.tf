@@ -43,14 +43,26 @@ resource "scaleway_container_namespace" "main" {
   name = var.project_name
 }
 
-# The container itself is added once a first image is pushed to the registry;
-# until then there is nothing to deploy.
-#
-# resource "scaleway_container" "webapp" {
-#   name           = "${var.project_name}-webapp"
-#   namespace_id   = scaleway_container_namespace.main.id
-#   registry_image = "${scaleway_registry_namespace.main.endpoint}/webapp:latest"
-#   port           = 3000
-#   min_scale      = 0
-#   max_scale      = 2
-# }
+# Image push (until B2 wires CI): build + push with
+# `bunx varlock run -- ./infrastructure/scripts/push-webapp.sh <tag>`
+# then `terraform apply -var webapp_image_tag=<tag>`.
+resource "scaleway_container" "webapp" {
+  name                   = "${var.project_name}-webapp"
+  namespace_id           = scaleway_container_namespace.main.id
+  image                  = "${scaleway_registry_namespace.main.endpoint}/webapp:${var.webapp_image_tag}"
+  port                   = 3000
+  cpu_limit              = 1000
+  memory_limit_bytes     = 2 * 1024 * 1024 * 1024
+  min_scale              = 0 # spike S-1 measures cold starts; demo mode (B3) raises this
+  max_scale              = 2
+  timeout                = 300
+  https_connections_only = true
+
+  environment_variables = {
+    SCW_GENERATIVE_APIS_BASE_URL = "https://api.scaleway.ai/${var.scw_project_id}/v1"
+  }
+
+  secret_environment_variables = {
+    SCW_GENERATIVE_APIS_KEY = var.generative_apis_key
+  }
+}

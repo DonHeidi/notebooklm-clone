@@ -9,3 +9,7 @@ output "marketing_website_endpoint" {
 output "container_registry_endpoint" {
   value = scaleway_registry_namespace.main.endpoint
 }
+
+output "webapp_endpoint" {
+  value = scaleway_container.webapp.public_endpoint
+}

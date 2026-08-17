@@ -20,7 +20,7 @@ relies on them. No blocker was found.
 | # | Area | Verdict |
 | - | --- | --- |
 | F-1 | Next.js webapp self-hosted in a container | ✅ Feasible — with **Node, not Bun, as production runtime** (decided) |
-| F-2 | Streaming chat (SSE) through Scaleway Serverless Containers | ⚠️ Likely, **undocumented — spike S-1** |
+| F-2 | Streaming chat (SSE) through Scaleway Serverless Containers | ✅ **Confirmed by spike S-1 (2026-08-17)** — token-by-token, no buffering, no truncation |
 | F-3 | RAG layer: pgvector + hybrid search on Supabase, via Drizzle | ✅ Feasible, documented end-to-end |
 | F-4 | Document ingestion (PDF/DOCX/web) under Bun | ✅ Feasible (unpdf, mammoth, linkedom + readability) |
 | F-5 | Background jobs for ingestion/artifacts | ✅ Feasible — staged: in-process → Scaleway Serverless Jobs |
@@ -100,9 +100,20 @@ where durable execution/sandboxes/approvals genuinely apply.
 
 ### D-7 — SSE fallback: a plain Scaleway Instance, decided by spike S-1
 
-**Agreed with the project owner, 2026-08-17.** If S-1 shows SSE breaking (or
-buffering badly) through the Serverless Containers gateway, the webapp moves
-to a small Scaleway Instance running the *same* Docker image behind
+**DECIDED 2026-08-17 by spike S-1: serverless confirmed — the VM fallback is
+not needed.** Measured against a real deployment (`feat/spike-streaming`,
+container `marginalia-webapp`, fr-par, min-scale 0): SSE streams through the
+gateway unbuffered and untruncated (server-paced 500 ms ticker arrived with
+±10 ms client-side deltas; an 87-event AI-SDK LLM stream arrived
+token-by-token with a clean `finish`/`[DONE]`), warm TTFB ~90–100 ms, and
+request bodies up to 20 MB passed — the rumored ~1 MB gateway limit did not
+materialize (D-5's storage-direct upload path stays, for TUS resumability
+and RLS, not because of a body limit). Cold-start figure: see the risk
+register row below. The fallback text below is retained for reference only.
+
+If S-1 had shown SSE breaking (or
+buffering badly) through the Serverless Containers gateway, the webapp would
+have moved to a small Scaleway Instance running the *same* Docker image behind
 Caddy/Traefik for TLS (`scaleway_instance_server`, Terraformable). A VM has
 no gateway in the streaming path, no cold starts, no body limits, and at
 DEV1/PLAY2 class (~€10/mo, verify at switch time) costs less than the
@@ -246,10 +257,10 @@ observed in the real product (`product/ui-research.md` §4).
 
 | Risk | Severity | Status / mitigation |
 | --- | --- | --- |
-| SSE streaming through Scaleway's container gateway unverified (docs cover HTTP/2, WebSockets, gRPC — never SSE; a gateway sits in front) | **High** — core feature | **Spike S-1** decides; fallback prepared (D-7): move the webapp's unchanged image to a Scaleway Instance behind Caddy. Secondary option: WebSocket transport (documented as supported) |
-| Request-body limit on containers (~1 MB, user-reported) | Medium | Designed around (D-5); S-1 confirms |
+| SSE streaming through Scaleway's container gateway unverified (docs cover HTTP/2, WebSockets, gRPC — never SSE; a gateway sits in front) | ~~High~~ **Resolved** | **S-1 verified 2026-08-17**: unbuffered, untruncated, token-by-token (500 ms server ticker → ±10 ms arrival deltas; 87-event LLM stream, warm TTFB ~0.1 s). D-7 decided: serverless stays |
+| Request-body limit on containers (~1 MB, user-reported) | ~~Medium~~ **Resolved** | **S-1 probed 2026-08-17**: 512 KB–20 MB all pass (HTTP 200, full body received). D-5 stays for TUS resumability + RLS, not because of a limit |
 | PDF parsing library behavior (unpdf per-page positions API, mammoth under Bun) | Medium | **Spike S-2**; alternatives ranked: pdfjs-dist legacy build, pdf2json |
-| Cold starts at min-scale 0 (no published numbers; image size dependent) | Low for demo | min-scale 1 (~€34–37/mo at 1 vCPU/2 GB) during demo windows; scale-to-zero otherwise |
+| Cold starts at min-scale 0 (no published numbers; image size dependent) | Low for demo | **S-1 measured 2026-08-17: 3.89 s TTFB** from zero (407 MB Node standalone image; ~0.09 s warm). min-scale 1 (~€34–37/mo at 1 vCPU/2 GB) during demo windows; scale-to-zero otherwise |
 | Supabase free-tier: 500 MB DB / 500 MB RAM caps HNSW scale; project pauses after 1 week idle | Medium | Prototype scale (≤ tens of thousands of 1536-dim vectors) fits; Pro ($25/mo) before demos; consider `halfvec` |
 | Supabase Queues (pgmq) GA label unconfirmed | Low | Launched 2024-12, dashboard-integrated; acceptable for prototype |
 | Generative-APIs model EOL rotation; org-level rate limits need payment method on file | Low | Loose model pinning behind D-4 abstraction; register payment method |
