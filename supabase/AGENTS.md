@@ -12,11 +12,15 @@ Initialized with the Supabase CLI (pinned via mise: `mise exec -- supabase`).
 ## Schema ownership (convention)
 
 - **Application tables** are owned by Drizzle in
-  `apps/webapp/src/server/db/schema.ts`; migrations are generated and applied
-  with drizzle-kit (see `apps/webapp/AGENTS.md`).
-- **`supabase/migrations/`** is reserved for Supabase-level concerns Drizzle
-  does not model: enabling extensions (e.g. `vector`), RLS policies, storage
-  buckets, triggers on `auth.*`.
+  `apps/webapp/src/server/db/schema.ts`; migrations are generated with
+  drizzle-kit **into `supabase/migrations/`** (Supabase-style timestamps,
+  see `apps/webapp/AGENTS.md`) and applied by the Supabase CLI together with
+  the hand-written ones, in one timestamp-ordered timeline. `meta/` is
+  drizzle-kit's journal — commit it, never edit it.
+- **Hand-written migrations** cover Supabase-level concerns Drizzle does not
+  model: enabling extensions (e.g. `vector`, timestamped before the first
+  schema migration), RLS policies (timestamped after the tables they cover),
+  storage buckets, triggers on `auth.*`.
 - Never modify Supabase-managed schemas (`auth`, `storage`, `vault`) from
   Drizzle.
 
