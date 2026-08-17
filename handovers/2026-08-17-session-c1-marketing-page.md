@@ -8,8 +8,8 @@ the actual prototype scope, closing CTA. Roadmap lane C, session C1.
 
 ## What was done
 
-- Working product name: **Marginalia** — "notes in the margins of your
-  sources". Placeholder only; stated as such in the page footer and the PR.
+- Product name: **Marginalia** — "notes in the margins of your sources".
+  Proposed as a placeholder, **confirmed by the owner during this session**.
   No Google/NotebookLM branding anywhere; footer carries an explicit
   non-affiliation line.
 - Single page (`src/pages/index.astro`) composed from components under
@@ -48,8 +48,8 @@ the actual prototype scope, closing CTA. Roadmap lane C, session C1.
 
 ## Decisions
 
-- **Name "Marginalia" is a placeholder** — owner to confirm or rename.
-  Renaming touches only copy in the components and the favicon.
+- **Name "Marginalia" confirmed by the owner** (was proposed as a
+  placeholder). The footer's "working title" hedge was removed accordingly.
 - Zero-JS page: all interaction is CSS (`:has()`, `:target`, `:hover`,
   `:focus-visible`). Keeps the static-bucket deployment trivial.
 - Replaced the default Astro `favicon.ico`/`favicon.svg` with a simple
@@ -60,7 +60,6 @@ the actual prototype scope, closing CTA. Roadmap lane C, session C1.
 
 ## Open / next
 
-- Owner decision: keep or replace the working name "Marginalia".
 - C2 (docs site) can reuse the token set in `src/styles/global.css` if a
   shared look is wanted; nothing is extracted to `packages/` yet (YAGNI until
   a second consumer exists).
