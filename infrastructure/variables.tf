@@ -13,7 +13,7 @@ variable "zone" {
 variable "project_name" {
   type        = string
   description = "Prefix for all resource names"
-  default     = "notebooklm-clone"
+  default     = "marginalia"
 }
 
 variable "webapp_image_tag" {
