@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "ui-research");
+if (!entry) throw new Error("product/ui-research.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/ui-research.md"
+  title="UI research — Marginalia Docs"
+  description="Top-down decomposition of the real Gemini Notebook interface, with implications for the clone."
+/>

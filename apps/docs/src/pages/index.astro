@@ -1,17 +1,87 @@
 ---
+import Base from "../layouts/Base.astro";
+import { repo } from "../nav";
 
+const sections = [
+  {
+    href: "/product/scope/",
+    path: "product/scope.md",
+    title: "Product scope",
+    text: "Every feature of the real Gemini Notebook, catalogued and sorted into build phases. Phase 1 — the grounded-chat core loop — is the current target.",
+  },
+  {
+    href: "/product/ui-research/",
+    path: "product/ui-research.md",
+    title: "UI research",
+    text: "A top-down decomposition of the real product's interface, screen by screen, with implications for the clone.",
+  },
+  {
+    href: "/decisions/",
+    path: "product/feasibility.md",
+    title: "Feasibility study",
+    text: "The architecture decision record: whether the chosen stack can deliver Phase 1, and the numbered decisions (D-1…) that shape the build.",
+  },
+  {
+    href: "/roadmap/",
+    path: "product/roadmap.md",
+    title: "Roadmap",
+    text: "The 7-day prototype plan — four parallel lanes of agent-executed sessions, each ending in a PR and a handover.",
+  },
+  {
+    href: "/sessions/",
+    path: "handovers/",
+    title: "Session log",
+    text: "One handover note per working session: what was done, what was decided, what the next session needs to know.",
+  },
+];
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Base
+  title="Marginalia — Docs"
+  description="Documentation for Marginalia, an open-source NotebookLM clone: product scope, architecture decisions, roadmap, and session-by-session build log."
+>
+  <div class="max-w-3xl">
+    <p class="eyebrow">Documentation</p>
+    <h1 class="font-display mt-3 text-4xl font-medium text-balance sm:text-5xl">
+      The project, read from its own margins.
+    </h1>
+    <p class="text-ink-soft mt-5 text-lg leading-relaxed">
+      <span class="font-display text-ink italic">Marginalia</span> is an open-source clone of
+      Gemini Notebook (formerly NotebookLM): upload sources, chat with an AI that answers only
+      from them, and follow every claim back to the cited passage. It is built in public, one
+      reviewed session at a time — and this site is where the project documents itself.
+    </p>
+    <p class="text-ink-soft mt-4 leading-relaxed">
+      Nothing here is written twice. Every page is rendered directly from the markdown files in
+      the <a href={repo} class="text-ink font-medium underline underline-offset-2">repository</a
+      >&rsquo;s <code class="font-mono text-sm">product/</code> and{" "}
+      <code class="font-mono text-sm">handovers/</code> directories, which stay the single source
+      of truth.
+    </p>
+
+    <h2 class="font-display mt-12 text-2xl font-medium">Where to start</h2>
+    <p class="text-ink-soft mt-2 leading-relaxed">
+      New to the project? Read the scope for the <em>what</em>, the feasibility study for the{" "}
+      <em>how</em>, the roadmap for the <em>when</em> — and the session log for how it actually
+      went.
+    </p>
+
+    <ul class="mt-8 space-y-6">
+      {
+        sections.map((s) => (
+          <li class="border-line rounded border bg-card p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 class="text-lg font-semibold">
+                <a href={s.href} class="hover:underline hover:underline-offset-2">
+                  {s.title}
+                </a>
+              </h3>
+              <span class="source-path">{s.path}</span>
+            </div>
+            <p class="text-ink-soft mt-2 text-sm leading-relaxed">{s.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>

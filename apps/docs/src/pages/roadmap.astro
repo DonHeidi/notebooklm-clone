@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "roadmap");
+if (!entry) throw new Error("product/roadmap.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/roadmap.md"
+  title="Roadmap — Marginalia Docs"
+  description="The 7-day prototype roadmap: session graph, parallel lanes, and the explicit cut list."
+/>

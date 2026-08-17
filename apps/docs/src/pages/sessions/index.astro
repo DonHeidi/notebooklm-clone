@@ -1,0 +1,39 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getSessions } from "../../nav";
+
+const sessions = await getSessions();
+---
+
+<Base
+  title="Session log — Marginalia Docs"
+  description="Chronological log of Marginalia's working sessions: one handover note per session, rendered from handovers/."
+>
+  <div class="max-w-3xl">
+    <p class="eyebrow">Sessions</p>
+    <h1 class="font-display mt-3 text-4xl font-medium">Session log</h1>
+    <p class="text-ink-soft mt-4 leading-relaxed">
+      The project is built in sessions: one goal, one branch, one PR — and one handover note,
+      written for whoever picks up the work next. This is the build, in chronological order.
+    </p>
+
+    <ol class="mt-10 space-y-4">
+      {
+        sessions.map((s) => (
+          <li class="border-line rounded border bg-card p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 class="text-lg font-semibold">
+                <a href={s.href} class="hover:underline hover:underline-offset-2">
+                  {s.title}
+                </a>
+              </h2>
+              <time datetime={s.date} class="font-mono text-ink-soft text-xs">
+                {s.date}
+              </time>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</Base>
