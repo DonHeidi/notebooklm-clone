@@ -8,7 +8,7 @@ work can start.
 ## What was done
 
 - Git repo initialized on `main`; this session's work on branch
-  `session/01-setup` (worktree `.worktrees/session-01-setup`).
+  `chore/setup-monorepo` (worktree `.worktrees/chore-setup-monorepo`).
 - Bun workspaces (`apps/*`, `packages/*`); root scripts for dev/build/test.
 - `mise.toml` pinning bun 1.3.14, terraform 1.15.8, supabase CLI 2.114.0.
 - `apps/webapp`: create-next-app (App Router, TS, Tailwind v4, Turbopack,

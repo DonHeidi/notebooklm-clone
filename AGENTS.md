@@ -48,3 +48,7 @@ Gemini Notebook (formerly NotebookLM) clone. Bun-managed TypeScript monorepo.
   review, and a documented handover in `handovers/` (one note per session).
   Work happens on a branch in a git worktree under `.worktrees/`, never
   directly on `main`.
+- **Branch naming** follows the Angular conventional-commit types:
+  `<type>/<short-kebab-topic>`, where `<type>` is one of `feat`, `fix`,
+  `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `chore`
+  (e.g. `feat/notebook-upload`, `chore/setup-monorepo`).
