@@ -43,10 +43,14 @@ app view (src/app/**/page.tsx)
 
 - Schema lives in `src/server/db/schema.ts`; only application tables — never
   model or touch Supabase-managed schemas (`auth`, `storage`, `vault`).
-- Migrations: `bunx varlock run -- bunx drizzle-kit generate` /
-  `... drizzle-kit migrate` (config in `drizzle.config.ts`, output in
-  `drizzle/`). Supabase-level SQL (extensions, RLS) lives in
-  `supabase/migrations/` instead — see `supabase/AGENTS.md`.
+- Migrations: `bunx varlock run -- bunx drizzle-kit generate --name <topic>`
+  (config in `drizzle.config.ts`) writes Supabase-style timestamped SQL into
+  `supabase/migrations/`, forming one ordered timeline with the hand-written
+  Supabase-level migrations (extensions before the schema, RLS after — see
+  `supabase/AGENTS.md`). Migrations are applied by the Supabase CLI
+  (`supabase start` on a fresh stack, `supabase migration up`, or
+  `supabase db reset`), not by drizzle-kit. Never use `drizzle-kit push`
+  (feasibility D-3: it drops the HNSW operator class).
 - `DATABASE_URL` is the pooled (transaction-mode) connection string, so the
   client is created with `prepare: false`.
 
