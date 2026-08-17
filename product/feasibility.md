@@ -98,6 +98,20 @@ adds an orchestration-layer lock-in exactly where NF-16 says to stay thin,
 for no Phase 1 gain. Revisit for Phase 5 (Deep Research, code execution),
 where durable execution/sandboxes/approvals genuinely apply.
 
+### D-7 — SSE fallback: a plain Scaleway Instance, decided by spike S-1
+
+**Agreed with the project owner, 2026-08-17.** If S-1 shows SSE breaking (or
+buffering badly) through the Serverless Containers gateway, the webapp moves
+to a small Scaleway Instance running the *same* Docker image behind
+Caddy/Traefik for TLS (`scaleway_instance_server`, Terraformable). A VM has
+no gateway in the streaming path, no cold starts, no body limits, and at
+DEV1/PLAY2 class (~€10/mo, verify at switch time) costs less than the
+serverless container at min-scale 1. The price is operational: OS patching,
+TLS, a deploy step, no autoscaling — acceptable for a prototype. Explicitly
+rejected: keeping the container and adding a separate SSE relay server on a
+VM — splitting the app across two runtimes adds an auth-forwarding hop and
+buys nothing over hosting the whole webapp on the instance.
+
 ## Architecture (resulting shape)
 
 ```text
@@ -129,7 +143,7 @@ observed in the real product (`product/ui-research.md` §4).
 
 | Risk | Severity | Status / mitigation |
 | --- | --- | --- |
-| SSE streaming through Scaleway's container gateway unverified (docs cover HTTP/2, WebSockets, gRPC — never SSE; a gateway sits in front) | **High** — core feature | **Spike S-1.** Fallbacks: WebSocket transport (documented as supported), or another container host for the webapp only |
+| SSE streaming through Scaleway's container gateway unverified (docs cover HTTP/2, WebSockets, gRPC — never SSE; a gateway sits in front) | **High** — core feature | **Spike S-1** decides; fallback prepared (D-7): move the webapp's unchanged image to a Scaleway Instance behind Caddy. Secondary option: WebSocket transport (documented as supported) |
 | Request-body limit on containers (~1 MB, user-reported) | Medium | Designed around (D-5); S-1 confirms |
 | PDF parsing library behavior (unpdf per-page positions API, mammoth under Bun) | Medium | **Spike S-2**; alternatives ranked: pdfjs-dist legacy build, pdf2json |
 | Cold starts at min-scale 0 (no published numbers; image size dependent) | Low for demo | min-scale 1 (~€34–37/mo at 1 vCPU/2 GB) during demo windows; scale-to-zero otherwise |
