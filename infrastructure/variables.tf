@@ -15,3 +15,15 @@ variable "project_name" {
   description = "Prefix for all resource names"
   default     = "notebooklm-clone"
 }
+
+variable "webapp_image_tag" {
+  type        = string
+  description = "Tag of the webapp image in the registry namespace"
+  default     = "latest"
+}
+
+variable "generative_apis_key" {
+  type        = string
+  description = "Scaleway Generative APIs key (IAM secret key). Set via TF_VAR_generative_apis_key from varlock — never in files."
+  sensitive   = true
+}
