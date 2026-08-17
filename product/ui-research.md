@@ -6,11 +6,12 @@
 > ends with implications for the clone. Deltas against `product/scope.md` are
 > collected at the bottom.
 >
-> **Captured so far:** notebook workspace (empty notebook).
-> **Wanted next:** notebook library/home, add-sources dialog, chat with
-> citations (incl. hover/preview state), source viewer with a highlighted
-> cited passage, a Studio artifact configuration + result (e.g. Report or
-> Audio Overview), notes list/editor, share dialog, settings.
+> **Captured so far:** notebook workspace (empty notebook), add-sources
+> dialog.
+> **Wanted next:** notebook library/home, chat with citations (incl.
+> hover/preview state), source viewer with a highlighted cited passage, a
+> Studio artifact configuration + result (e.g. Report or Audio Overview),
+> notes list/editor, share dialog, settings.
 
 ---
 
@@ -117,6 +118,45 @@ Empty state observed:
   unimplemented types should simply be absent (not disabled), keeping the
   layout honest.
 - BETA badges on tiles are a nice, cheap pattern for our own staged rollout.
+
+## 3. Dialog: Add sources
+
+Opened via "+ Add sources" (and presumably via the "add a source" link and
+file-drop). Renders as a **centered overlay above the chat column** — the
+Sources and Studio panels stay visible; dismissed with an X.
+
+Structure, top to bottom:
+
+- **Marketing-style headline**: "Create Audio and Video Overviews from
+  *websites*" — the last word is gradient-styled and presumably rotates
+  through source types. Notable: the dialog sells an *outcome* (artifacts),
+  not the mechanical "upload a file".
+- **Web search box** — the identical component from the Sources panel
+  (placeholder, Web dropdown, Fast Research dropdown, submit). Search-the-web
+  is the *first* option in the add flow, above uploading.
+- **Drop zone** (large, dashed border): "or drop your files — pdf, images,
+  docs, audio, *and more*" ("and more" is a link, presumably to a full
+  format list).
+- **Four entry-point buttons** inside the drop zone:
+  | Button | Maps to |
+  | --- | --- |
+  | Upload files | CF-02 file upload (pdf, images, docs, audio, …) |
+  | Websites (link icon + YouTube icon) | CF-02 website URL + YouTube URL — one shared entry point |
+  | Drive | CF-02 Google Docs/Slides/Sheets import |
+  | Copied text | CF-02 pasted text |
+
+**Implications**
+
+- The whole add flow is one dialog with four entry points + drag-and-drop —
+  no multi-step wizard. For Phase 1 we need exactly three of them: Upload
+  files, Websites (URL only, no YouTube), Copied text; Drive is
+  integration-specific (SF-04) and can be omitted.
+- Website and YouTube ingestion share one entry point — the URL is parsed and
+  routed by type. Our URL intake should be designed the same way even if
+  YouTube lands later.
+- The drop zone lives inside the dialog *and* the Sources panel accepts drops
+  directly — the upload path must be a shared component/handler.
+- The rotating-headline framing is optional polish; skip for prototype.
 
 ---
 
