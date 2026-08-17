@@ -1,0 +1,45 @@
+---
+/** The core loop is a genuine sequence, so numbered steps carry information here. */
+const steps = [
+  {
+    title: "Create a notebook",
+    body: "One isolated workspace per project. Sources, chat, and notes in one notebook never leak into another.",
+  },
+  {
+    title: "Add your sources",
+    body: "Upload PDFs, plain text, or Markdown; paste text straight in; or pull in a web page by URL. Each source is parsed and indexed for retrieval.",
+  },
+  {
+    title: "Ask, with your sources in charge",
+    body: "Tick exactly which sources may answer. Replies stream in grounded in that selection — and when the evidence isn't there, Marginalia says so instead of improvising.",
+  },
+  {
+    title: "Follow any citation",
+    body: "Every claim links to its evidence. Click a citation chip and the source viewer opens at the exact cited passage, not just the right document.",
+  },
+  {
+    title: "Keep what's worth keeping",
+    body: "Save an answer as a note — citations intact — and build up your own layer of marginalia alongside the sources.",
+  },
+];
+---
+
+<section id="how-it-works" class="border-line border-y">
+  <div class="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
+    <p class="eyebrow mb-4">How it works</p>
+    <h2 class="font-display max-w-xl text-4xl leading-tight font-medium tracking-tight sm:text-5xl">
+      One loop, from source to note
+    </h2>
+    <ol class="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        steps.map((step, i) => (
+          <li class="max-w-sm">
+            <p class="font-mono text-ink-soft text-sm">{String(i + 1).padStart(2, "0")}</p>
+            <h3 class="mt-2 text-lg font-semibold">{step.title}</h3>
+            <p class="text-ink-soft mt-2 text-[0.95rem] leading-relaxed">{step.body}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

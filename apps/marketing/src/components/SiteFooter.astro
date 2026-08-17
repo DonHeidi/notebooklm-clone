@@ -1,0 +1,70 @@
+---
+/**
+ * The page's own footnotes: every claim made above is cited here, against the
+ * project's real documents — the same discipline the product promises.
+ */
+const repo = "https://github.com/DonHeidi/notebooklm-clone";
+
+const footnotes = [
+  {
+    id: "fn-1",
+    text: "Grounding is the product's defining principle: “AI output should remain grounded in the notebook's selected source material and provide traceable provenance back to those sources.”",
+    href: `${repo}/blob/main/product/scope.md`,
+    label: "product/scope.md §1",
+  },
+  {
+    id: "fn-2",
+    text: "A single-narrator audio overview is the prototype's differentiator, generated asynchronously from selected sources.",
+    href: `${repo}/blob/main/product/roadmap.md`,
+    label: "product/roadmap.md, lane D",
+  },
+  {
+    id: "fn-3",
+    text: "The prototype scope and the explicit cut list — what is deliberately left out and why.",
+    href: `${repo}/blob/main/product/roadmap.md`,
+    label: "product/roadmap.md",
+  },
+];
+---
+
+<footer class="border-line border-t">
+  <div class="mx-auto w-full max-w-6xl px-5 py-12 sm:px-8">
+    <section aria-label="Footnotes">
+      <h2 class="font-mono text-sm font-medium tracking-[0.14em] uppercase">Footnotes</h2>
+      <p class="text-ink-soft mt-2 text-sm">
+        This page cites its sources too. Every claim above traces back to the project's own
+        documents.
+      </p>
+      <ol class="mt-5 max-w-3xl space-y-4">
+        {
+          footnotes.map((fn, i) => (
+            <li id={fn.id} class="target:bg-mark-soft flex gap-3 rounded p-1 text-sm leading-relaxed">
+              <span class="cite self-start" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span>
+                {fn.text}{" "}
+                <a href={fn.href} class="text-ink font-medium underline underline-offset-2">
+                  {fn.label}
+                </a>
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <div class="border-line text-ink-soft mt-10 flex flex-col gap-2 border-t pt-6 text-sm">
+      <p>
+        <span class="font-display text-ink text-base italic">Marginalia</span> is a working title —
+        the project may ship under another name.
+      </p>
+      <p>
+        An independent open-source project. Not affiliated with Google, NotebookLM, or Gemini.
+      </p>
+      <p>
+        <a href={repo} class="underline underline-offset-2">github.com/DonHeidi/notebooklm-clone</a>
+      </p>
+    </div>
+  </div>
+</footer>
