@@ -1,6 +1,9 @@
 # notebooklm-clone — agent guide
 
 Gemini Notebook (formerly NotebookLM) clone. Bun-managed TypeScript monorepo.
+Product scope and phase roadmap: `product/scope.md` — current target is
+**Phase 1 (Core MVP)**: notebooks → sources → retrieval → grounded chat →
+inline citations → source navigation → notes.
 
 ## Layout
 
