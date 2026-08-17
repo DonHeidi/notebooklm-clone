@@ -9,7 +9,7 @@ inline citations → source navigation → notes.
 
 | Path | What | Details |
 | --- | --- | --- |
-| `apps/webapp` | Next.js fullstack app (Bun runtime) | `apps/webapp/AGENTS.md` |
+| `apps/webapp` | Next.js fullstack app (Node runtime in production, Bun for tooling — see `product/feasibility.md` D-1) | `apps/webapp/AGENTS.md` |
 | `apps/docs` | Astro static docs site | `apps/docs/AGENTS.md` |
 | `apps/marketing` | Astro static marketing site | `apps/marketing/AGENTS.md` |
 | `packages/` | Shared workspace packages (empty so far) | — |

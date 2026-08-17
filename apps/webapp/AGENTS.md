@@ -10,9 +10,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # apps/webapp — agent guide
 
-Next.js (App Router, Turbopack) fullstack app running on **Bun** — package name
+Next.js (App Router, Turbopack) fullstack app — package name
 `@notebooklm-clone/webapp`. TypeScript, TailwindCSS, shadcn/ui, Drizzle ORM
 against the Supabase Postgres.
+
+**Runtime split (decision D-1, `product/feasibility.md`):** the production
+container runs on **Node** (official Next.js `output: "standalone"` Docker
+pattern) because of open Bun-stable bugs around `next build` and streaming.
+**Bun** remains the package manager, script runner, and test runner for this
+workspace. Revisit when a stable Bun ships the fixes.
 
 ## Architecture (Domain Driven Design)
 
