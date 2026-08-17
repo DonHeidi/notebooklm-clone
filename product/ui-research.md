@@ -7,7 +7,8 @@
 > collected at the bottom.
 >
 > **Captured so far:** notebook workspace (empty notebook), add-sources
-> dialog.
+> dialog, Fast Research flow (chat-triggered, results staged in Sources
+> panel).
 > **Wanted next:** notebook library/home, chat with citations (incl.
 > hover/preview state), source viewer with a highlighted cited passage, a
 > Studio artifact configuration + result (e.g. Report or Audio Overview),
@@ -158,6 +159,57 @@ Structure, top to bottom:
   directly — the upload path must be a shared component/handler.
 - The rotating-headline framing is optional polish; skip for prototype.
 
+## 4. Flow: Fast Research (chat-triggered web source discovery)
+
+Observed sequence on an empty notebook (0 sources):
+
+1. **Zero-source question** ("What do you know about the first human
+   civilisations?") → the assistant answers **from general model knowledge**
+   (a real, multi-paragraph answer with bolded key terms), then explicitly
+   discloses the boundary: *"While I have this general knowledge, Gemini
+   Notebook is designed to dive much deeper using your specific sources …
+   with precise citations."* It then proposes Fast Research.
+2. A **suggestion bubble** ("Yes, use fast research to find sources on early
+   civilizations.") appears under the assistant message; clicking it sends it
+   as a normal user message (it renders as one in the transcript). The chips
+   are conversational steering, regenerated per turn (later turn shows new
+   chips: "Walk me through how to generate a Timeline", "What are the main
+   differences between these four civilizations?").
+3. The assistant **narrates the side effect**: it says it's starting fast
+   research and that results will appear in the source panel — then the
+   Sources panel shows a brief spinner, the panel's search box is filled with
+   a **generated search query** ("first human civilizations Mesopotamia
+   Egypt"), and a result card appears.
+4. **Fast Research result card** (in the Sources panel, *not* in chat):
+   - Header: "Fast Research completed!" + **View** link.
+   - List of candidate sources: favicon (e.g. Wikipedia), title, and a
+     one-line **AI relevance summary** per source ("Provides a foundational
+     synthesis of all four…", "Contrasts Mesopotamia and Egypt through a…").
+   - Collapsed remainder: "🔗 7 more sources".
+   - Card actions: 👍 👎, **Delete**, and a primary **"+ Import"** button.
+5. Candidate sources are **staged** — nothing enters the notebook (the
+   sources list is still empty, chat still shows "0 sources") until the user
+   clicks Import. This matches CF-19's proposed workflow exactly, including
+   the human approval gate.
+
+**Implications**
+
+- **Chat is an orchestrator, not just Q&A**: an assistant turn can start an
+  async job whose result surfaces in a *different* panel. Architecturally
+  this needs (a) tool-calling in the chat backend, (b) a job whose state the
+  Sources panel can observe (Supabase Realtime subscription or polling), and
+  (c) the assistant narrating what it did. Even if Fast Research itself is
+  post-MVP, the chat↔panel eventing pattern is the same one artifact
+  generation (SF-09) needs — worth designing once.
+- **Zero-source behavior is "answer + disclose + redirect"**, not refusal.
+  Our grounded-chat prompt needs an explicit ungrounded mode with that
+  disclosure, switching to citation-mode once sources are selected.
+- **Staged import with per-candidate relevance summaries** is the CF-19 UI
+  contract: candidates are a reviewable artifact with accept/reject, not an
+  auto-import.
+- Suggestion chips are LLM-generated next-action proposals per turn — cheap
+  to add later via the same completion; static chips suffice for MVP.
+
 ---
 
 ## Deltas vs. `product/scope.md`
@@ -166,7 +218,9 @@ Structure, top to bottom:
 | - | --- | --- |
 | D-1 | **Data Table** is a first-class Studio artifact tile | Not listed in §3 / CF list (closest: CF-22 file generation) |
 | D-2 | **Copy (duplicate) notebook** action in the top bar | Not in CF-01 capability table |
-| D-3 | Chat is fully usable with **zero sources** (onboarding + web-search offers) | Scope implies chat over existing sources only |
+| D-3 | Chat with **zero sources** answers from general model knowledge with an explicit "this is general knowledge, add sources for citations" disclosure, then proposes Fast Research | Scope implies chat over existing sources only; NF-01 doesn't cover a sanctioned ungrounded mode |
+| D-7 | Chat can **trigger async jobs** (Fast Research) whose results render in the Sources panel; the assistant narrates the side effect | CF-19 describes the flow but not chat as its entry point / orchestrator |
+| D-8 | Assistant offers a **Timeline** artifact in conversation | Timeline is not a Studio tile nor in the CF list (possibly a Reports subtype) |
 | D-4 | Web source discovery (Fast Research) is embedded in the Sources panel, always visible | CF-19 describes the flow but not its prominence |
 | D-5 | Notes and artifacts share one "Studio output" list in the UI | Scope models them separately (correct for domain; UI merges them) |
 | D-6 | Analytics is surfaced as a top-level button on an ordinary notebook | SF-13 marks analytics optional/shared-notebooks-only |
