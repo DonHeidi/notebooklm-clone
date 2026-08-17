@@ -1,0 +1,25 @@
+---
+import DocPage from "../../layouts/DocPage.astro";
+import { getSessions, type SessionEntry } from "../../nav";
+
+export async function getStaticPaths() {
+  const sessions = await getSessions();
+  return sessions.map((session) => ({
+    params: { id: session.entry.id },
+    props: { session },
+  }));
+}
+
+interface Props {
+  session: SessionEntry;
+}
+
+const { session } = Astro.props;
+---
+
+<DocPage
+  entry={session.entry}
+  sourcePath={`handovers/${session.entry.id}.md`}
+  title={`${session.title} — Marginalia Docs`}
+  description={`Handover note for ${session.title}.`}
+/>

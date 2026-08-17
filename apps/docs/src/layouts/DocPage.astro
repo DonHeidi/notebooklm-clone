@@ -1,0 +1,31 @@
+---
+import { render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import Base from "./Base.astro";
+import { repo } from "../nav";
+
+interface Props {
+  entry: CollectionEntry<"product"> | CollectionEntry<"handovers">;
+  /** Repo-relative path of the source file, e.g. `product/scope.md`. */
+  sourcePath: string;
+  title: string;
+  description: string;
+}
+
+const { entry, sourcePath, title, description } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Base title={title} description={description}>
+  <article class="max-w-3xl">
+    <header class="border-line mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-b pb-4">
+      <a href={`${repo}/blob/main/${sourcePath}`} class="source-path">{sourcePath}</a>
+      <p class="text-ink-soft text-sm">
+        Rendered from the repository — the file stays the source of truth.
+      </p>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</Base>

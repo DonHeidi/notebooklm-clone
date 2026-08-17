@@ -1,0 +1,31 @@
+---
+import { getNavGroups } from "../nav";
+
+const groups = await getNavGroups();
+const current = Astro.url.pathname.replace(/\/?$/, "/");
+---
+
+<nav aria-label="Documentation">
+  <ul class="space-y-6">
+    {
+      groups.map((group) => (
+        <li>
+          <p class="eyebrow mb-2">{group.label}</p>
+          <ul class="space-y-0.5">
+            {group.items.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class="nav-link"
+                  aria-current={current === item.href ? "page" : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

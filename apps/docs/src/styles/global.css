@@ -1,1 +1,240 @@
 @import "tailwindcss";
+
+/*
+ * Marginalia design tokens — same identity as apps/marketing (session C1).
+ *
+ * Single light "paper" theme: ink-blue text on near-white paper, one
+ * marker-yellow accent. The docs site is the project's reading room, so the
+ * chrome stays quiet and the documents carry the page.
+ */
+@theme {
+  --color-paper: #fafaf6;
+  --color-card: #ffffff;
+  --color-ink: #17293b;
+  --color-ink-soft: #4b5a69;
+  --color-line: #e0e0d6;
+  --color-mark: #ffe14d;
+  --color-mark-deep: #f5c500;
+  --color-mark-soft: #fff3b0;
+
+  --font-display: "Newsreader Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Public Sans Variable", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+
+  ::selection {
+    background-color: var(--color-mark);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-xs font-medium tracking-[0.18em] uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  /*
+   * The provenance path chip: the canonical repo path of a rendered document,
+   * set on a marker-yellow highlight — the site's "rendered, not copied" rule
+   * made visible.
+   */
+  .source-path {
+    @apply font-mono text-xs font-medium;
+    background-color: var(--color-mark);
+    color: var(--color-ink);
+    border-radius: 4px;
+    padding: 0.2em 0.55em;
+  }
+
+  /* Sidebar link; the current page reads as a highlighted line in a book. */
+  .nav-link {
+    @apply text-ink-soft hover:text-ink block rounded px-2 py-1 text-sm;
+  }
+
+  .nav-link[aria-current="page"] {
+    @apply text-ink font-medium;
+    background: linear-gradient(
+      transparent 8%,
+      var(--color-mark) 8%,
+      var(--color-mark) 92%,
+      transparent 92%
+    );
+  }
+}
+
+/*
+ * Typography for rendered markdown. The source files are plain repo docs
+ * (no frontmatter, GitHub-flavored tables, ASCII diagrams in code fences),
+ * so the prose styles do the presentational work the files themselves
+ * must not be edited for.
+ */
+.prose {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--color-ink);
+  overflow-wrap: break-word;
+}
+
+.prose h1,
+.prose h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.prose h1 {
+  font-size: 2.25rem;
+  margin-block: 0 1.25rem;
+}
+
+.prose h2 {
+  font-size: 1.6rem;
+  margin-block: 2.5rem 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-line);
+}
+
+.prose h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-block: 2rem 0.5rem;
+}
+
+.prose h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-block: 1.5rem 0.5rem;
+}
+
+.prose p {
+  margin-block: 0.9rem;
+}
+
+.prose a {
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.prose ul,
+.prose ol {
+  margin-block: 0.9rem;
+  padding-inline-start: 1.5rem;
+}
+
+.prose ul {
+  list-style: disc;
+}
+
+.prose ol {
+  list-style: decimal;
+}
+
+.prose li {
+  margin-block: 0.35rem;
+}
+
+.prose li > ul,
+.prose li > ol {
+  margin-block: 0.35rem;
+}
+
+/* Status/method callouts in the docs — a highlighted passage, not a rule. */
+.prose blockquote {
+  margin-block: 1.25rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-mark-soft);
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.prose blockquote p {
+  margin-block: 0.35rem;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background-color: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+/* Fenced blocks (incl. ASCII diagrams): card surface, scroll in place. */
+.prose pre {
+  margin-block: 1.25rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--color-card) !important;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+}
+
+/* Wide tables scroll inside their own box instead of breaking the page. */
+.prose table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-block: 1.25rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--color-line);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: 600;
+  background-color: var(--color-card);
+}
+
+.prose hr {
+  margin-block: 2.5rem;
+  border: none;
+  border-top: 1px solid var(--color-line);
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
