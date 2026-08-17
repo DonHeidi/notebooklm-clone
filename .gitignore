@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+
+# builds
+.next/
+out/
+dist/
+.astro/
+build/
+
+# environment / secrets (varlock: only .env.schema is committed)
+.env
+.env.*
+!.env.schema
+!.env.example
+
+# terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.auto.tfvars.example
+.terraform.lock.hcl.backup
+crash.log
+
+# supabase
+supabase/.branches/
+supabase/.temp/
+
+# worktrees
+.worktrees/
+
+# misc
+.DS_Store
+*.log
+coverage/
+.turbo/
+tsconfig.tsbuildinfo
