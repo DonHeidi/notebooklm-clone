@@ -123,6 +123,109 @@ rejected: keeping the container and adding a separate SSE relay server on a
 VM — splitting the app across two runtimes adds an auth-forwarding hop and
 buys nothing over hosting the whole webapp on the instance.
 
+### D-8 — TTS provider: Azure AI Speech, behind a thin `synthesize()` abstraction
+
+**Decided 2026-08-17 (spike D1).** Method: doc-only comparison of ten
+providers against current official documentation, all fetched 2026-08-17
+(no TTS API key was resolvable in the spike environment, so no hosted
+provider was exercised by a real call; the self-host fallback *was*
+verified by a real local generation — see below). Criteria were
+re-weighted by the project owner during the session: **feature fit
+(API shape, quality, cost) ahead of data-residency**, with EU posture
+still recorded. Use case: single-speaker Audio Overview (CF-12 MVP tier),
+~700-word script (≈ 4,500 chars ≈ 5 min audio), German and English,
+generated async (SF-09). Full comparison table in the D1 PR description.
+
+**Scaleway has no TTS product** — verified against the Generative APIs
+supported-models page and a grep of the `scaleway/docs-content` repo
+(2026-08-17): audio models are transcription-only (`whisper-large-v3`;
+`voxtral-small` EOL 2026-08-01). The Audio Overview therefore cannot stay
+single-vendor; D-4's abstraction principle extends to speech synthesis.
+
+**Chosen: Azure AI Speech** (standard neural voices first; DragonHD German
+voices as an optional quality step). Why, against the criteria:
+
+- *API shape:* the only competitively priced API that takes the whole
+  script in **one call** (10-minute-audio cap per request) and returns raw
+  audio bytes from a single key-authenticated POST with an SSML body — the
+  thinnest wrapper in the field (OpenAI caps at 4,096 chars, Google at
+  5,000 *bytes* — German umlauts push a 4,500-char script over it —
+  Deepgram at 2,000 chars, Mistral at ~300 words; all need chunking +
+  concatenation). Full SSML prosody control on standard voices. A GA batch
+  synthesis API returns word-level timings (free transcript-sync later).
+- *Cost:* $0.0675 per generation standard ($15/1M chars, price read from
+  the Azure Retail Prices API), $0.099 with DragonHD ($22/1M). Free tier
+  (F0) is 0.5M chars/month ≈ **111 five-minute generations — the entire
+  prototype phase costs $0** (F0 lacks the batch API; the realtime
+  endpoint suffices for our lengths).
+- *Voice quality:* German is one of only 8 locales with dedicated
+  fine-tuned DragonHD voices (`de-DE-Seraphina/Florian`, GA) plus 15
+  standard neural voices; en-US is Azure's flagship locale (30+ HD voices,
+  podcast-optimized variants). Caveat: quality judged from docs/samples
+  catalog only — **audition before wiring** (risk row below).
+- *EU:* documented in-region processing ("Azure Speech doesn't store or
+  process your data outside the region of your resource"); standard
+  voices available in Germany West Central; DragonHD needs West Europe or
+  Sweden Central. Pin `westeurope`.
+- *Latency:* documented < 300 ms to audio start on the realtime endpoint;
+  a 5-minute script streams back well inside our async budget.
+
+**Runner-up: ElevenLabs** (`eleven_multilingual_v2`) — the voice-quality
+leader (its model family holds multiple top-10 TTS-Arena slots), German
+first-class, one call (10k-char limit), trivial API. Loses on cost
+(~$0.74–0.82 per generation via subscription credits ≈ **10× Azure**),
+free tier of ~2 episodes/month without commercial license, and
+Enterprise-only EU residency. This is the quality upgrade path if Azure
+narration underwhelms in listening tests.
+
+Also evaluated: **Mistral Voxtral TTS** (launched 2026-03; EU-native,
+$0.072/generation, German+English, streaming — the closest D-4-spirit
+option, penalized by ~300-word request chunking, base64-JSON responses,
+and product newness); OpenAI `gpt-4o-mini-tts` (~$0.07, voices "optimized
+for English", EU residency approval-gated); Deepgram Aura-2 (EU endpoint
+GA 2026-01, $0.135, but 2,000-char chunks and no prosody control);
+Amazon Polly generative ($0.135 in Frankfurt, drags in SigV4/AWS SDK);
+Google Cloud TTS (Chirp 3 HD $0.135, OAuth2 token flow + byte-cap
+chunking); Cartesia Sonic (no documented EU hosting below Enterprise).
+
+**Self-host cost floor — verified by real generation in this spike
+(2026-08-17):** Piper (`piper1-gpl`, GPL-3 code, CC0 voices) rendered a
+~700-word script in **13.2 s on a 16-core CPU** (~17× realtime;
+`de_DE-thorsten-medium` → 3:42 audio / 9.8 MB WAV,
+`en_US-lessac-medium` → 3:45 / 9.9 MB). Runs on a ~€15/mo instance;
+quality is a clear tier below hosted options. The higher-quality
+commercially-safe self-host is Chatterbox Multilingual v3 (MIT, 23
+languages incl. German, OpenAI-compatible server, needs an ~8 GB GPU —
+Scaleway L4 €0.79/h on-demand). Kokoro is ruled out solely by its
+continued lack of German; XTTS-v2, Fish/OpenAudio and Mistral's open
+Voxtral weights are all non-commercial licenses.
+
+**Interface shape for D2** (function-signature level; satisfies
+NF-16/D-4's thin-abstraction rule — Azure is not OpenAI-compatible, but
+the custom surface is one function, and an `openai-compatible` adapter
+covers OpenAI and the self-host servers as the escape hatch):
+
+```ts
+interface TtsProvider {
+  synthesize(req: {
+    script: string;              // plain text, ≤ ~1,000 words
+    language: "de" | "en";
+    voice?: string;              // provider-neutral key, mapped per adapter
+    format?: "mp3" | "wav";      // default mp3
+  }): Promise<{
+    audio: Uint8Array;           // D2 uploads to Supabase Storage
+    mimeType: string;
+    charactersBilled: number;
+  }>;
+  listVoices(language: "de" | "en"): Promise<{ key: string; label: string }[]>;
+}
+```
+
+Selected via `TTS_PROVIDER` (see `.env.schema`); D2 composes: script
+generation (D-4 LLM) → `synthesize()` → Storage upload → artifact row +
+Realtime status (SF-09). Chunking, if a script ever exceeds one request,
+lives *inside* the adapter, not in the pipeline.
+
 ## Architecture (resulting shape)
 
 ```text
@@ -163,6 +266,8 @@ observed in the real product (`product/ui-research.md` §4).
 | Generative-APIs model EOL rotation; org-level rate limits need payment method on file | Low | Loose model pinning behind D-4 abstraction; register payment method |
 | `bun test` lacks `--filter`/globs; `mock.module` scoping bugs | Low | Root `bun test` sweeps workspaces; avoid module-mock-heavy test design |
 | Local pgvector version may differ from hosted (0.8 features: iterative scans) | Low | Check `extversion` in S-2; avoid 0.8-only features initially |
+| Azure TTS (D-8) chosen on docs only — German/English voice quality never auditioned (no API key in spike D1) | Medium | First step of D2: create an F0 key, audition `de-DE-Seraphina/Florian/Katja` + en-US candidates before wiring the pipeline; runner-up ElevenLabs and self-host fallback stand ready behind the `TtsProvider` interface |
+| Azure DragonHD voices unavailable in Germany West Central (West Europe / Sweden Central only); voice catalog churns | Low | Standard neural voices suffice for MVP and exist in all three EU regions; pin `westeurope`; churn absorbed by the D-8 abstraction |
 
 ## Spike plan (ordered, one session each)
 

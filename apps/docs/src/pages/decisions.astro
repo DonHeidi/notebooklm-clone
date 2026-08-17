@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "feasibility");
+if (!entry) throw new Error("product/feasibility.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/feasibility.md"
+  title="Decisions — Marginalia Docs"
+  description="The feasibility study and architecture decision record: verdict, numbered decisions, risks, and spike plan."
+/>

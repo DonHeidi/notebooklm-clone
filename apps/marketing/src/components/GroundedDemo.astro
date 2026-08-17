@@ -1,0 +1,85 @@
+---
+/**
+ * Static, CSS-only illustration of the core loop: a grounded answer whose
+ * citation chips highlight the exact cited passage in the source panel on
+ * hover, focus, or click (the chips are real in-page anchors).
+ */
+---
+
+<figure class="demo grid items-start gap-4 lg:grid-cols-[1.1fr_1fr]" aria-label="Illustration of a grounded answer with clickable citations">
+  <!-- Chat panel -->
+  <div class="bg-card border-line flex flex-col rounded-xl border p-5 shadow-sm sm:p-6">
+    <p class="eyebrow mb-4">Notebook · Sourdough, scientifically</p>
+    <p
+      class="border-line text-ink-soft mb-5 self-end rounded-lg rounded-br-sm border px-4 py-2.5 text-sm"
+    >
+      Why does a colder, slower proof improve flavour?
+    </p>
+    <div class="text-[0.95rem] leading-relaxed">
+      <p class="mb-3">
+        Cold slows the yeast more than it slows the bacteria: gas production drops while
+        acetic-acid fermentation carries on, so the dough gains acidity and depth instead of just
+        volume.
+        <a href="#passage-1" data-cite="1" class="cite" aria-label="Citation 1: fermentation-notes.md">1</a>
+        A longer proof also gives protease enzymes time to free amino acids that later brown into
+        richer crust flavours in the oven.
+        <a href="#passage-2" data-cite="2" class="cite" aria-label="Citation 2: Bread Science, page 84">2</a>
+      </p>
+      <p class="font-mono text-ink-soft text-xs">Answered from 2 of 3 selected sources</p>
+    </div>
+  </div>
+
+  <!-- Sources panel -->
+  <div class="flex flex-col gap-4">
+    <div class="bg-card border-line rounded-xl border p-5 shadow-sm">
+      <p class="eyebrow mb-3">Sources</p>
+      <ul class="space-y-2 text-sm">
+        <li class="flex items-center gap-2.5">
+          <span aria-hidden="true" class="bg-ink text-paper grid h-4 w-4 place-items-center rounded-sm text-[10px]">✓</span>
+          <span>fermentation-notes.md</span>
+          <span class="sr-only">(selected)</span>
+        </li>
+        <li class="flex items-center gap-2.5">
+          <span aria-hidden="true" class="bg-ink text-paper grid h-4 w-4 place-items-center rounded-sm text-[10px]">✓</span>
+          <span>Bread-Science-ch3.pdf</span>
+          <span class="sr-only">(selected)</span>
+        </li>
+        <li class="text-ink-soft flex items-center gap-2.5">
+          <span aria-hidden="true" class="border-line h-4 w-4 rounded-sm border"></span>
+          <span>shopping-list.txt</span>
+          <span class="sr-only">(not selected)</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="bg-card border-line rounded-xl border p-5 shadow-sm">
+      <p class="font-mono text-ink-soft mb-2 text-xs">fermentation-notes.md</p>
+      <p class="text-ink-soft text-sm leading-relaxed">
+        …refrigerated the second batch overnight.&#32;<span
+          data-passage="1"
+          id="passage-1"
+          tabindex="-1"
+          >At 5&nbsp;°C the yeast all but stalls while the heterofermentative bacteria keep
+          producing acetic acid</span
+        > — the loaf came out noticeably tangier than the same-day bake…
+      </p>
+    </div>
+
+    <div class="bg-card border-line rounded-xl border p-5 shadow-sm">
+      <p class="font-mono text-ink-soft mb-2 text-xs">Bread-Science-ch3.pdf · p. 84</p>
+      <p class="text-ink-soft text-sm leading-relaxed">
+        …during extended fermentation,&#32;<span
+          data-passage="2"
+          id="passage-2"
+          tabindex="-1"
+          >proteolytic enzymes release free amino acids that participate in Maillard browning</span
+        >, deepening both crust colour and aroma…
+      </p>
+    </div>
+  </div>
+
+  <figcaption class="font-mono text-ink-soft text-xs lg:col-span-2">
+    Hover or click a citation to see the passage behind it. This is a static illustration — the
+    real thing streams.
+  </figcaption>
+</figure>

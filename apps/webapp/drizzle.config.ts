@@ -6,8 +6,14 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
   schema: "./src/server/db/schema.ts",
-  out: "./drizzle",
+  // Generated migrations land in supabase/migrations with Supabase-style
+  // timestamp names, so extensions (before) and RLS policies (after) form a
+  // single ordered timeline applied by the Supabase CLI. Never `push` (D-3).
+  out: "../../supabase/migrations",
   dialect: "postgresql",
+  migrations: {
+    prefix: "supabase",
+  },
   dbCredentials: {
     url: process.env.DATABASE_URL,
   },
