@@ -17,9 +17,11 @@ import { streamText } from "ai";
 
 export const dynamic = "force-dynamic";
 
+// Project-scoped base URL (https://api.scaleway.ai/<project-id>/v1) is needed
+// when the IAM key's default project is not the target project.
 const scaleway = createOpenAICompatible({
   name: "scaleway",
-  baseURL: "https://api.scaleway.ai/v1",
+  baseURL: process.env.SCW_GENERATIVE_APIS_BASE_URL ?? "https://api.scaleway.ai/v1",
   apiKey: process.env.SCW_GENERATIVE_APIS_KEY ?? "",
 });
 

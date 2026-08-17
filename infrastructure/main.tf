@@ -58,6 +58,10 @@ resource "scaleway_container" "webapp" {
   timeout                = 300
   https_connections_only = true
 
+  environment_variables = {
+    SCW_GENERATIVE_APIS_BASE_URL = "https://api.scaleway.ai/${var.scw_project_id}/v1"
+  }
+
   secret_environment_variables = {
     SCW_GENERATIVE_APIS_KEY = var.generative_apis_key
   }

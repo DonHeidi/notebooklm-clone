@@ -22,6 +22,11 @@ variable "webapp_image_tag" {
   default     = "latest"
 }
 
+variable "scw_project_id" {
+  type        = string
+  description = "Target Scaleway project ID (also used to build the project-scoped Generative APIs URL). Set via TF_VAR_scw_project_id."
+}
+
 variable "generative_apis_key" {
   type        = string
   description = "Scaleway Generative APIs key (IAM secret key). Set via TF_VAR_generative_apis_key from varlock — never in files."
