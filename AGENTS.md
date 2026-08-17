@@ -52,3 +52,9 @@ Gemini Notebook (formerly NotebookLM) clone. Bun-managed TypeScript monorepo.
   `<type>/<short-kebab-topic>`, where `<type>` is one of `feat`, `fix`,
   `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `chore`
   (e.g. `feat/notebook-upload`, `chore/setup-monorepo`).
+- **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org)
+  with the same Angular types: `<type>(<optional scope>): <description>`,
+  imperative mood, lowercase description, no trailing period. Scope is the
+  workspace or area when it clarifies (e.g. `feat(webapp): add notebook
+  upload`, `fix(infrastructure): correct bucket website config`). Breaking
+  changes are marked with `!` and a `BREAKING CHANGE:` footer.
