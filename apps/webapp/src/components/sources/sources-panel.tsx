@@ -133,10 +133,28 @@ export function SourcesPanel({
       </div>
 
       {sources.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-          Saved sources will appear here. Add PDFs, text or websites to ground
-          the chat.
-        </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+            <FileText className="size-5 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No sources yet</p>
+            <p className="text-sm text-muted-foreground">
+              The chat answers from what you add here — PDFs, websites, or
+              pasted text.
+            </p>
+          </div>
+          <AddSourcesDialog
+            notebookId={notebookId}
+            userId={userId}
+            onAdded={refresh}
+            trigger={
+              <Button size="sm">
+                <Plus /> Add sources
+              </Button>
+            }
+          />
+        </div>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {sources.map((source) => (
@@ -200,44 +218,51 @@ function SourceRow({
   const Icon = TYPE_ICONS[source.type];
   const processing = source.status === "pending" || source.status === "processing";
   return (
-    <li className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent">
-      {source.status === "ready" && (
-        <Checkbox
-          checked={selected}
-          onCheckedChange={onToggle}
-          aria-label={`Use ${source.title} to ground the chat`}
-        />
-      )}
-      <button
-        type="button"
-        onClick={onOpen}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
-      >
-        <Icon className="size-4 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate text-sm" title={source.title}>
-          {source.title}
-        </span>
-        {processing && (
-          <Loader2
-            className="size-4 shrink-0 animate-spin text-muted-foreground"
-            aria-label="Processing"
+    <li className="group flex flex-col rounded-md px-2 py-1.5 hover:bg-accent">
+      <div className="flex items-center gap-2">
+        {source.status === "ready" && (
+          <Checkbox
+            checked={selected}
+            onCheckedChange={onToggle}
+            aria-label={`Use ${source.title} to ground the chat`}
           />
         )}
-        {source.status === "failed" && (
-          <Badge variant="destructive" title={source.errorMessage ?? undefined}>
-            Failed
-          </Badge>
-        )}
-      </button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        aria-label={`Delete ${source.title}`}
-        className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-        onClick={onDelete}
-      >
-        <Trash2 />
-      </Button>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        >
+          <Icon className="size-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate text-sm" title={source.title}>
+            {source.title}
+          </span>
+          {processing && (
+            <Loader2
+              className="size-4 shrink-0 animate-spin text-muted-foreground"
+              aria-label="Processing"
+            />
+          )}
+          {source.status === "failed" && (
+            <Badge variant="destructive">Failed</Badge>
+          )}
+        </button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Delete ${source.title}`}
+          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+          onClick={onDelete}
+        >
+          <Trash2 />
+        </Button>
+      </div>
+      {source.status === "failed" && source.errorMessage && (
+        // Visible in the row, not tooltip-only — the failure reason is the
+        // one thing the user needs in order to fix the source.
+        <p className="mt-0.5 pl-6 text-xs text-destructive">
+          {source.errorMessage}
+        </p>
+      )}
     </li>
   );
 }

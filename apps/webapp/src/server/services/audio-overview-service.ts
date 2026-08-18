@@ -15,6 +15,7 @@ import {
   type Artifact,
 } from "../repositories/artifact-repository";
 import { createSourceRepository } from "../repositories/source-repository";
+import { startOfUtcDay } from "./quota";
 import type { AudioOverviewConfig } from "../db/schema";
 
 // Business layer for the Audio Overview artifact (CF-12, SF-09). Mirrors the
@@ -24,9 +25,14 @@ import type { AudioOverviewConfig } from "../db/schema";
 
 export class ArtifactInputError extends Error {}
 
-// NF-15 guards (constants, not config — revisit with SF-11 quotas).
+// NF-15 guards (constants, not config). The per-notebook caps shipped with
+// D2; the per-user daily cap is A6's SF-11 minimum. It counts artifacts
+// CREATED in the current UTC day — regenerations of an existing artifact are
+// not counted (no generation-event log without a schema change; they stay
+// bounded by the concurrency and per-notebook caps).
 export const MAX_ARTIFACTS_PER_NOTEBOOK = 20;
 export const MAX_CONCURRENT_GENERATIONS_PER_NOTEBOOK = 1;
+export const MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY = 10;
 
 // Shown to users on failed artifacts; keep it short and stack-free.
 const MAX_ERROR_MESSAGE_LENGTH = 300;
@@ -207,6 +213,16 @@ export async function createAudioOverview(
     );
   }
   assertNoConcurrentGeneration(existing);
+
+  const createdToday = await artifactRepository.countByOwnerSince(
+    ownerId,
+    startOfUtcDay(),
+  );
+  if (createdToday >= MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY) {
+    throw new ArtifactInputError(
+      `you've reached today's limit of ${MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY} audio overviews — it resets at midnight UTC`,
+    );
+  }
 
   const config: AudioOverviewConfig = {
     language: input.language,

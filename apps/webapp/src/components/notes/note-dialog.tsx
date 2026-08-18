@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Pin, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Pin, StickyNote, Trash2 } from "lucide-react";
 import {
   deleteNoteAction,
   getNoteAction,
@@ -211,9 +211,17 @@ export function NoteDialog({
 
             <div className="min-h-0 flex-1 overflow-y-auto">
               {note.content.trim() === "" ? (
-                <p className="text-sm text-muted-foreground">
-                  This note is empty — edit it to add content.
-                </p>
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                    <StickyNote className="size-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This note is empty.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                    <Pencil /> Add content
+                  </Button>
+                </div>
               ) : (
                 <TooltipProvider>
                   <AssistantMarkdown

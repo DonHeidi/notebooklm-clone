@@ -16,6 +16,7 @@ import {
   createSourceRepository,
   type RetrievedChunk,
 } from "../repositories/source-repository";
+import { startOfUtcDay } from "./quota";
 
 // Business layer for the grounded chat (CF-05/06/07/08): conversation
 // lifecycle, retrieval → system prompt, and message persistence. The route
@@ -25,6 +26,12 @@ import {
 // How many of the most recent messages are sent to the model as context
 // (simple fixed window ≙ 6 exchanges — CF-08 MVP).
 export const CHAT_HISTORY_WINDOW = 12;
+
+// Per-day chat cap (SF-11 / NF-15 minimum, A6): bounds token spend per
+// notebook by counting the user's questions in the current UTC day. Surfaced
+// as a user-presentable message, mirroring the sibling *InputError classes.
+export class ChatQuotaError extends Error {}
+export const MAX_CHAT_MESSAGES_PER_NOTEBOOK_PER_DAY = 50;
 
 // Top-k chunks put into the prompt.
 export const RETRIEVAL_LIMIT = 10;
@@ -56,6 +63,26 @@ export async function getOrCreateConversation(
     return existing[0];
   }
   return conversations.create(ownerId, notebookId);
+}
+
+// Enforced by the chat route BEFORE retrieval/generation, so a capped
+// notebook spends neither embedding nor completion tokens.
+export async function assertChatMessageQuota(
+  notebookId: string,
+  ownerId: string,
+  deps: ChatDeps = {},
+): Promise<void> {
+  const { conversations } = resolve(deps);
+  const sentToday = await conversations.countUserMessagesForNotebookSince(
+    notebookId,
+    ownerId,
+    startOfUtcDay(),
+  );
+  if (sentToday >= MAX_CHAT_MESSAGES_PER_NOTEBOOK_PER_DAY) {
+    throw new ChatQuotaError(
+      `this notebook has reached its daily limit of ${MAX_CHAT_MESSAGES_PER_NOTEBOOK_PER_DAY} chat messages — it resets at midnight UTC`,
+    );
+  }
 }
 
 export type Grounding = {
