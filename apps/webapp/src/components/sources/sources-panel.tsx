@@ -133,10 +133,28 @@ export function SourcesPanel({
       </div>
 
       {sources.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-          Saved sources will appear here. Add PDFs, text or websites to ground
-          the chat.
-        </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+            <FileText className="size-5 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No sources yet</p>
+            <p className="text-sm text-muted-foreground">
+              The chat answers from what you add here — PDFs, websites, or
+              pasted text.
+            </p>
+          </div>
+          <AddSourcesDialog
+            notebookId={notebookId}
+            userId={userId}
+            onAdded={refresh}
+            trigger={
+              <Button size="sm">
+                <Plus /> Add sources
+              </Button>
+            }
+          />
+        </div>
       ) : (
         <ul className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {sources.map((source) => (

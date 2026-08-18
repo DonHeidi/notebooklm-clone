@@ -178,12 +178,24 @@ export function SourceViewer({
                     source.content
                   )}
                 </div>
+              ) : processing ? (
+                // A5-deferred state: a citation (or plain open) landed here
+                // while ingestion is still running. The processing poll above
+                // swaps the content in the moment it is ready.
+                <div className="flex flex-col items-center gap-3 py-10 text-center">
+                  <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                  <p className="text-sm font-medium">
+                    This source is still processing
+                  </p>
+                  <p className="max-w-sm text-sm text-muted-foreground">
+                    {highlight
+                      ? "The cited passage will appear here, highlighted, as soon as processing finishes."
+                      : "The extracted content will appear here as soon as processing finishes."}
+                  </p>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  No extracted content yet
-                  {source.status === "pending" || source.status === "processing"
-                    ? " — this source is still being processed."
-                    : "."}
+                  No extracted content.
                 </p>
               )}
             </div>

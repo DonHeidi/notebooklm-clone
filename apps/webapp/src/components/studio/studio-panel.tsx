@@ -101,10 +101,21 @@ export function StudioPanel({
       </div>
 
       {artifacts.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-          Studio output will be saved here. Generate an Audio Overview from
-          your sources to get started.
-        </p>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+            <AudioLines className="size-5 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No Studio output yet</p>
+            <p className="text-sm text-muted-foreground">
+              Turn your sources into a short spoken episode — it generates in
+              the background and is saved here.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setConfigOpen(true)}>
+            <AudioLines /> Create an Audio Overview
+          </Button>
+        </div>
       ) : (
         <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-3">
           {artifacts.map((artifact) => (
