@@ -30,9 +30,14 @@ manually; only one person/pipeline runs apply at a time.
 
 ## Resources
 
-- Object-storage website buckets for `apps/docs` and `apps/marketing`.
+- Object-storage website buckets for `apps/docs` and `apps/marketing`,
+  plus the versioned `marginalia-tfstate` bucket (S3 backend, B2).
 - Registry namespace + container namespace for the webapp; the
-  `scaleway_container` resource stays commented until a first image is pushed.
+  `scaleway_container` resource is **live** (`marginalia-webapp`, min-scale
+  0) since B1/B2 — deployed via the `deploy-webapp` workflow.
+  *(Corrected 2026-08-18 — this line previously claimed the resource "stays
+  commented until a first image is pushed", stale since B1; found by C5's
+  architecture audit.)*
 
 ## Working rules
 
