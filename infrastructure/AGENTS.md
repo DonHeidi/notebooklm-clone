@@ -18,6 +18,16 @@ AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY \
 There is no state locking (no DynamoDB equivalent on Scaleway) — coordinate
 manually; only one person/pipeline runs apply at a time.
 
+## Containers API gotchas (verified 2026-08-18)
+
+- Endpoint family is `containers/v1` (not v1beta1); the image field is
+  `image` (`registry_image` is gone); the URL field is `public_endpoint`.
+- **Rollout semantics:** a PATCH that changes `image` starts a rollout by
+  itself (`status` → `updating`). POST `/redeploy` is required **only** when
+  the PATCH was a no-op (same image), and calling it while a rollout is in
+  progress returns 4xx. (`deploy-webapp.yml` encodes this; first learned the
+  hard way in the failed first dispatch, fixed in PR #19.)
+
 ## Resources
 
 - Object-storage website buckets for `apps/docs` and `apps/marketing`.

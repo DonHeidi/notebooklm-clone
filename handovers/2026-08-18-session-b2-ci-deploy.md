@@ -84,6 +84,12 @@ the build args commit is required).
 3. **Containers API is `containers/v1` now** (not v1beta1): field is `image`
    (`registry_image` is gone, matching the provider deprecations B1 hit) and
    a PATCH does **not** roll out on its own — POST `/redeploy` is required.
+   > **Correction (2026-08-18, foreman, PR #19):** wrong for image changes —
+   > an image-changing PATCH **does** start a rollout (`status: updating`),
+   > and calling `/redeploy` during that rollout returns 4xx (this failed the
+   > first Actions dispatch). `/redeploy` is needed only when the PATCH was a
+   > no-op (same image). Authoritative rules: `infrastructure/AGENTS.md` §
+   > Containers API gotchas.
 4. **Deploy workflows are not dispatchable until merged** — GitHub only
    indexes `workflow_dispatch` workflows from the default branch. The
    one-time deploy of this session ran the identical steps locally; first
