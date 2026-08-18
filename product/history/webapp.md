@@ -4,6 +4,11 @@
 > `apps/webapp` through session A3 (PR [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15)).
 > Later sessions append below rather than rewriting.
 > **Sources:** PR descriptions, `handovers/`, `product/feasibility.md`.
+>
+> **Update (2026-08-18, session C8):** coverage extended through the full
+> merged board — sessions A4, D2, A5, A7, and A6 in the catch-up section
+> below. (The per-session appending C4 asked for did not happen; C8 is the
+> batch, see `product/history/process.md`.)
 
 ## What was built
 
@@ -166,8 +171,187 @@
 
 ## Where the webapp stands
 
+> **Update (2026-08-18, session C8):** superseded — everything "next" below
+> shipped the same day. See the catch-up section that follows.
+
 Sources can be added and become embedded, citation-ready chunks; auth and
 ownership are enforced end-to-end. Next per the roadmap: A4 grounded chat
 with retrieval and streamed citations (must honor the SEC-3 prompt-injection
 contract and delete the spike route, closing SEC-4), then A5
 citations-to-passage navigation and notes.
+
+## Catch-up: sessions A4, D2, A5, A7, A6 (appended 2026-08-18, session C8)
+
+Written by session C8 from the session handovers and PR descriptions
+(#24, #27, #29, #33, #35, #49). The snapshot above is unchanged; with this
+section the page covers the full merged board. Sessions appear in merge
+order.
+
+### What was built
+
+- **2026-08-18 — Grounded chat with inline citations, session A4**
+  (PR [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24)). The
+  product's defining loop (CF-05/06/07/08): hybrid retrieval
+  (pgvector cosine over the HNSW index + full-text on the generated
+  `tsvector`, fused with reciprocal rank fusion in **one** SQL statement),
+  a streaming chat route that emits a typed `data-citation` part at each
+  first occurrence of a valid `[n]` marker, transactional persistence of
+  the assistant message + citations, one conversation per notebook with a
+  12-message context window, clear-chat, a zero-source mode (retrieval
+  skipped, general-knowledge disclosure mandated), source-selection
+  checkboxes in the Sources panel, and citation chips carrying
+  `data-chunk-id` for A5. The B1 spike route was deleted — SEC-4 closed.
+  80 tests.
+- **2026-08-18 — Audio Overview, session D2**
+  (PR [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)). CF-12
+  MVP on the **generic artifacts foundation** (scope §3): an `artifacts`
+  table + `artifact_type`/`artifact_status` enums with `audio_overview` as
+  the first type and a replayable `config` jsonb
+  (language/voice/focusPrompt/sourceIds), an owner-scoped artifact
+  repository, a `TtsProvider` interface (D-8) with an Azure adapter that is
+  one key-authed SSML POST via plain fetch, SEC-3-delimited script
+  generation with a 24k-char source budget, and an async pipeline
+  mirroring A3's stage 1 (pending → `after()` → processing → script LLM →
+  TTS → service-role upload → ready; ≤1 concurrent generation, ≤20
+  artifacts per notebook). Studio panel: config dialog, 2.5 s polling,
+  rename/delete/regenerate/download, playback via 600 s signed URLs.
+  E2E with real Azure: a 3:59 German episode in 16.8 s, a 2:25 English one
+  in 9.3 s. 88 tests.
+- **2026-08-18 — Citation → passage navigation and notes, session A5**
+  (PR [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29)). CF-07
+  interactions 1–4 and CF-10 MVP: every chip click resolves **server-side**
+  (`findChunkLocation`, owner-scoped) and the viewer opens with the cited
+  passage `<mark>`-highlighted and scrolled into view — the A3 offset
+  invariant carried through 1:1. A `NotebookBridge` React context wires
+  chips, viewer, and notes across the server-rendered Studio boundary.
+  Dangling citations (deleted source, cleared chat) degrade to inert
+  chips. "Save to note" persists an assistant answer as a note with its
+  citations still navigable, idempotently; manual notes get a list, a
+  view/edit dialog, and delete-with-confirmation. 107 tests; the E2E
+  SQL-verified highlight ≡ chunk ≡ offsets through unicode content.
+- **2026-08-18 — DB-backed tests on real Postgres, session A7**
+  (PR [#33](https://github.com/DonHeidi/notebooklm-clone/pull/33),
+  feasibility D-9). PGlite and its two dev-dependencies left the
+  workspace: `create-test-database.ts` now provisions one throwaway
+  database per test file (`marginalia_test_<pid>_<n>`, swept on the next
+  run) on a **real Postgres with real pgvector** — locally the
+  `supabase start` stack's Postgres on `:54322` by default, in CI a
+  `pgvector/pgvector:pg17` service container, `TEST_DATABASE_URL`
+  overrides. Fidelity improved: the hand-written `enable_pgvector`
+  migration is applied verbatim (PGlite had installed the extension into
+  `public`). 143/143 tests green on both backends with **zero test files
+  edited**; the story of the CI workarounds this removed is in
+  `product/history/infrastructure.md`.
+- **2026-08-18 — Demo polish, session A6**
+  (PR [#49](https://github.com/DonHeidi/notebooklm-clone/pull/49)).
+  Designed empty states for every screen (library, sources, chat with
+  example-question chips, studio, notes, note dialog, plus the A5-deferred
+  viewer state for citations landing on a still-processing source);
+  app-level error surfaces (`error.tsx`, `global-error.tsx`,
+  `not-found.tsx`, `loading.tsx` skeletons) and visible row-level failure
+  text; per-user quotas (SF-11 / NF-15 minimum): 20 notebooks per user,
+  50 chat messages per notebook per day (asserted **before** retrieval, so
+  a capped notebook spends no tokens; surfaced as an HTTP 429 whose body
+  text lands verbatim in the chat banner), 10 audio overviews per user per
+  day; and `bun run seed:demo`. 154 tests.
+
+### Decisions and why
+
+- **Retrieval is a Drizzle SQL template, not a database function**
+  (session A4, PR [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24)).
+  The test factory applies only the migration timeline, so a SQL function
+  would be invisible to the DB-backed tests; as a template the *exact
+  production query* runs in tests, and the logic stays in the repository
+  layer (DDD trace intact).
+- **Citation ordinals are the marker numbers as rendered** (session A4).
+  The model's `[n]` markers are deduplicated but deliberately **not**
+  renumbered to consecutive — a consecutive rewrite would mislabel every
+  chip after the streamed text already showed the original numbers.
+  Invented markers (a `[7]` with 3 chunks) cite nothing and are dropped.
+- **Retrieval runs before the stream opens** (session A4), so provider
+  failures surface as a plain 502 with readable text instead of a broken
+  stream.
+- **No Azure SDK** (session D2, PR [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)).
+  The adapter is one plain-fetch SSML POST to the realtime endpoint; the
+  SDK would be a heavy dependency for a single call. CBR mp3 output means
+  duration derives from byte length.
+- **Deterministic source truncation for the audio script** (session D2).
+  With no query there is no relevance signal to justify chunk sampling, so
+  oversized sources contribute start/middle/end slices of a per-source
+  budget — reproducible input for regeneration.
+- **Voices were auditioned, not assumed** (session D2). The owner picked
+  `de-DE-SeraphinaMultilingualNeural` and `en-US-AndrewNeural` from five
+  real F0 generations and accepted Azure standard-neural quality — no
+  ElevenLabs escalation; DragonHD stays the upgrade path. The Azure region
+  became `swedencentral` after Azure refused new customers in
+  `westeurope` — the deviation from D-8's pin preserves every property the
+  region was chosen for (EU processing, standard + HD German voices);
+  recorded in `product/feasibility.md` D-8.
+- **Citation offsets never come from the client** (session A5, PR
+  [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29)). Chips
+  carry only `data-chunk-id`; resolution is a fresh owner-scoped server
+  query on every click, and every degraded case (unknown id, cascaded
+  chunk, foreign owner) uniformly yields `null` → an inert chip, never an
+  error.
+- **Notes render every unresolved `[n]` marker as an inert chip**
+  (session A5). Clear-chat sets `source_message_id` to null, leaving no
+  way to distinguish orphaned citations from hand-typed markers — so both
+  render as "source removed". A hand-typed `[7]` in a manual note becomes
+  an inert chip; documented cosmetic trade-off.
+- **Quotas without schema changes** (session A6, PR
+  [#49](https://github.com/DonHeidi/notebooklm-clone/pull/49)). Constants
+  live in the owning services, enforcement is repository count queries,
+  and the day window is the current UTC calendar day. The accepted
+  limitation: audio **re**generations are not counted against the daily
+  cap (that would need a generation-event log, i.e. a migration); they
+  stay bounded by the 1-concurrent and 20-per-notebook guards.
+- **The demo seed runs through the service layer, not `supabase/seed.sql`**
+  (session A6). Embeddings cannot be generated from SQL, so
+  `seed:demo` calls the real pipeline (create → `ingestSource` →
+  grounding + generation → persist with citations → save-as-note) and its
+  chunks, embeddings, and citations are real. It is idempotent (the
+  notebook title is the marker; every step re-checks) — which makes it
+  simultaneously the demo opening state **and the data-recovery
+  procedure** for the backup-less Free-tier database. No toast library was
+  added anywhere: the existing inline-banner/ActionResult idiom covered
+  every surfacing case.
+
+### Problems and how they were dealt with
+
+- **Stop aborts the UI, not (reliably) the server** (session A4). Verified
+  with instrumentation: behind the Next proxy a mid-stream client abort
+  reaches the handler only at teardown, so generation completes (~one
+  answer of token spend) and the full answer persists while the stopped
+  client shows the truncated view until reload. Documented in the route;
+  an explicit client→server abort beacon was judged out of MVP proportion.
+- **`convertToModelMessages` is async in ai@7** — the type error only
+  surfaces in `next build` (A4 gotcha, recorded for future sessions).
+- **Main's CI went red at Lint after the #27–#29 merge wave**: two
+  `react-hooks/set-state-in-effect` findings in D2's studio components
+  gated every later PR (A7's #33 stopped at Lint with its Test step never
+  executing). Fixed by the dedicated PR
+  [#35](https://github.com/DonHeidi/notebooklm-clone/pull/35)
+  (`fix/studio-lint`); A6, whose brief still carried the fix as a
+  requirement, verified it was already done and annotated the A7 handover
+  instead of re-fixing — correct the record, not just the code.
+- **The seed script's resumability proved itself on a real failure**
+  (session A6): the first hosted run hit a transient provider timeout at
+  the chat step; the re-run skipped the already-ready sources and
+  completed. Recorded in the A6 handover as the recovery-procedure
+  evidence.
+- **Automation quirks, not app bugs**, kept accumulating in the E2E notes:
+  tooltip-covered first clicks on citation chips (A5), PNG screenshots
+  timing out on Wayland — JPEG works (A5), shadcn Tabs unmounting inactive
+  content (A6). Each is recorded in its handover for the next session's
+  benefit.
+
+### Where the webapp stands (2026-08-18, after A6)
+
+The full Phase 1 loop is shipped and deployed at `https://app.mrgnl.eu`:
+sources → retrieval → grounded chat → inline citations → passage
+navigation → notes, plus the Audio Overview artifact, per-user quotas, and
+a seeded demo notebook that doubles as the recovery procedure. 154 tests
+pass. Open per the handovers: URL-addressable source viewer (A3/A5),
+transcript persistence for audio (NF-11, D2), request-rate limiting
+(SEC-7 — quotas bound daily volume, not burst rate), and counting audio
+regenerations against the daily cap.

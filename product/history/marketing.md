@@ -87,3 +87,12 @@ Live at the Scaleway bucket endpoint since B2's deploy
 furnished, tracking-free. Open items: owner review of the legal texts, a
 webapp privacy statement when the webapp goes public (explicitly out of
 C3's scope), and the app CTA.
+
+> **Update (2026-08-18, session C8):** no marketing-lane session ran after
+> C4, but the platform moved under the site: it serves at
+> `https://www.mrgnl.eu` (Edge Services pipeline, session B4, PR
+> [#45](https://github.com/DonHeidi/notebooklm-clone/pull/45)), with the
+> apex `mrgnl.eu` 301-redirecting there and the old bucket endpoint still
+> serving; and the webapp *is* public now (`https://app.mrgnl.eu`), so the
+> webapp-privacy-statement and app-CTA items above are live open items, no
+> longer conditional. See `product/history/infrastructure.md`.

@@ -4,6 +4,9 @@
 > `supabase/` through session A3 (PR [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15)).
 > Later sessions append below rather than rewriting.
 > **Sources:** PR descriptions, `handovers/`, `product/feasibility.md`.
+>
+> **Update (2026-08-18, session C8):** coverage extended through the full
+> merged board — sessions B3 and B5 in the catch-up section below.
 
 ## What was built
 
@@ -28,6 +31,12 @@ No hosted Supabase project exists yet — everything so far runs against the
 local stack; a hosted project (and real publishable keys replacing B2's
 placeholders) is a B3/A-lane task
 (`handovers/2026-08-18-session-b2-ci-deploy.md`).
+
+> **Correction (2026-08-18, session C8):** no longer true — session B3
+> (PR [#36](https://github.com/DonHeidi/notebooklm-clone/pull/36))
+> provisioned the hosted project the same day, and B5
+> (PR [#48](https://github.com/DonHeidi/notebooklm-clone/pull/48)) brought
+> it under Terraform. See the catch-up section below.
 
 ## Decisions and why
 
@@ -118,8 +127,99 @@ handles the confirmation-enabled case defensively anyway.
 
 ## Where Supabase stands
 
+> **Update (2026-08-18, session C8):** superseded — the hosted project
+> exists and is Terraform-managed. See the catch-up section that follows.
+
 Local-only, with the schema, RLS, and storage layout that the hosted project
 will inherit by replaying the same migration timeline. The open items are
 hosted provisioning (B3), the Realtime question (revisited at D-2 stage 2),
 and SEC-5's standing review rule that every new repository/service method
 takes and applies `ownerId`.
+
+## Catch-up: sessions B3 and B5 (appended 2026-08-18, session C8)
+
+Written by session C8 from the session handovers and PR descriptions
+(#36, #48). The Terraform/platform side of both sessions is in
+`product/history/infrastructure.md`; this page carries the database and
+`supabase/` side. D2 (PR
+[#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)) also added to
+the migration timeline in between: the `artifacts` table migration, its
+hand-written RLS (A1's owner-chain pattern), and the private `artifacts`
+bucket (A3's owner-prefix pattern, 20 MB limit) — the feature story is in
+`product/history/webapp.md`.
+
+### What happened
+
+- **2026-08-18 — Hosted project provisioned, session B3**
+  (PR [#36](https://github.com/DonHeidi/notebooklm-clone/pull/36)).
+  Project `marginalia`, ref `ahphkkvsofqmxkqzbica`, region **eu-west-3
+  (Paris)** — colocated with the fr-par container — on the **Free tier**
+  (owner decision; the idle-pause trade-off and its before-demo
+  operational rule are in `product/feasibility.md`). `supabase link` +
+  `supabase db push` applied all 7 migrations cleanly; verification by SQL
+  against the hosted DB: 8 tables all with RLS enabled, one owner policy
+  per table + 6 `storage.objects` policies, HNSW + GIN indexes present,
+  `sources`/`artifacts` buckets private with 20 MB limits — and
+  **pgvector 0.8.2 on Postgres 17.6, identical to local**, which resolved
+  the feasibility register's "local vs hosted pgvector" risk row.
+- **2026-08-18 — Hosted auth config became code, session B3.** All hosted
+  auth settings live in `supabase/config.toml` under `[remotes.demo]`
+  (project-keyed override section) and are applied with
+  `supabase config push` — **zero unrecorded dashboard clicks**. The
+  effective config: email+password signup with email confirmation off
+  (hosted has no SMTP; Supabase's built-in mailer is capped at 2
+  emails/hour anyway), `site_url` + redirect allow-list on the public
+  endpoint (moved to `https://app.mrgnl.eu` by B4), and SEC-7 auth rate
+  limits (30 sign-ins/sign-ups per 5 min per IP, 150 token refreshes per
+  5 min).
+- **2026-08-18 — Project lifecycle under Terraform, session B5**
+  (PR [#48](https://github.com/DonHeidi/notebooklm-clone/pull/48)). The
+  hosted project was imported (never recreated) into
+  `infrastructure/supabase.tf` with `prevent_destroy`; the container's
+  Supabase env now comes from the `supabase_apikeys` data source.
+
+### The tool-ownership split (B5's core decision)
+
+Authoritatively documented in `supabase/AGENTS.md`; in short — Terraform
+owns project *lifecycle* (existence, org, region, name,
+`legacy_api_keys_enabled`) plus API-key reads; the Supabase CLI owns
+migrations, storage buckets/policies, and **all** runtime settings that
+`config.toml` models, applied via `supabase config push`. The
+`supabase_settings` resource was deliberately not instantiated: every
+category it exposes has a `config.toml` namespace, and importing it would
+put every `config push` and every `terraform apply` in a standing
+double-ownership fight over the same fields ("move a category wholesale or
+not at all").
+
+What the provider (v1.10.x) **cannot** manage — permanently with the CLI
+or dashboard, not a temporary gap: migrations and SQL DDL, storage buckets
+and their RLS policies, typed auth config, project pause/restore, backups,
+custom domains, and the database password (write-only at create,
+unreadable thereafter). The full list is in the B5 handover and
+`supabase/AGENTS.md`; it is also the recorded input to the open decision
+on Terraform-managing the Azure Speech resources.
+
+### Problems and how they were dealt with
+
+- **`supabase config push` auto-confirms when it detects an agent**
+  (session B3): a piped "n" did not abort the first push — treat every
+  `config push` as an apply, not a preview.
+- **Free tier has no backups.** Accepted by the owner with a recorded
+  recovery procedure instead: recreate the project (the B3/B5 infra
+  path — migrations and config are all code), sign the demo account up
+  again, and run A6's idempotent `bun run seed:demo` against it
+  (PR [#49](https://github.com/DonHeidi/notebooklm-clone/pull/49),
+  `product/history/webapp.md`).
+- **The pooler host is `aws-1-eu-west-3…`, not `aws-0…`** — a one-character
+  trap recorded in the B3 handover for anyone re-deriving the
+  `DATABASE_URL`.
+
+### Where Supabase stands (2026-08-18, after B5)
+
+Hosted and local are the same code: one migration timeline, auth config in
+`config.toml`, project lifecycle in Terraform, and a local stack whose
+Postgres doubles as the test server (D-9). Open items: the Realtime
+question (D-2 stage 2), SEC-5's standing review rule, the Free-tier
+idle-pause before-demo check, and pruning the legacy `TF_VAR_supabase_*`
+values once `seed:demo`'s hosted mode no longer reads them (foreman-2
+handover).
