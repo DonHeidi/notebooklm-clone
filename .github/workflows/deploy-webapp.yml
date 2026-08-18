@@ -1,0 +1,106 @@
+# Webapp deploy — manual trigger (workflow_dispatch) for the prototype phase.
+#
+# Builds the Docker image from apps/webapp/Dockerfile (B1's keeper), pushes it
+# to the Scaleway registry namespace, then points the serverless container
+# `marginalia-webapp` at the new image via the Containers API and waits for
+# the rollout.
+#
+# Tags pushed per run: an immutable `:sha-<12 chars>` (what the container is
+# updated to) and a moving `:latest`. Terraform's `webapp_image_tag` variable
+# defaults to `latest`, so a later `terraform apply` that flips the container
+# back to `:latest` points at the same digest as the most recent deploy —
+# drift stays benign. To pin, apply with `-var webapp_image_tag=sha-<...>`.
+#
+# Secrets used (names only, values in Proton Pass / GitHub secrets):
+#   SCW_SECRET_KEY            registry login + Containers API token
+#   NEXT_PUBLIC_SUPABASE_URL  build-time (inlined into the client bundle)
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY  build-time (publishable key, not secret —
+#                             stored as a secret anyway for one config surface)
+name: deploy-webapp
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-webapp
+  cancel-in-progress: false
+
+env:
+  REGISTRY: rg.fr-par.scw.cloud/marginalia
+  CONTAINERS_API: https://api.scaleway.com/containers/v1beta1/regions/fr-par
+  CONTAINER_NAME: marginalia-webapp
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Compute image tag
+        run: echo "IMAGE_TAG=sha-${GITHUB_SHA::12}" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: |
+          docker build \
+            -f apps/webapp/Dockerfile \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL='${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}' \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY='${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}' \
+            -t "$REGISTRY/webapp:$IMAGE_TAG" \
+            -t "$REGISTRY/webapp:latest" \
+            .
+
+      - name: Push image
+        run: |
+          echo '${{ secrets.SCW_SECRET_KEY }}' | docker login "$REGISTRY" -u nologin --password-stdin
+          docker push "$REGISTRY/webapp:$IMAGE_TAG"
+          docker push "$REGISTRY/webapp:latest"
+
+      - name: Update container to new image
+        run: |
+          set -euo pipefail
+          auth=(-H "X-Auth-Token: ${{ secrets.SCW_SECRET_KEY }}")
+          container_id=$(curl -sf "${auth[@]}" \
+            "$CONTAINERS_API/containers?name=$CONTAINER_NAME" \
+            | jq -r --arg n "$CONTAINER_NAME" '.containers[] | select(.name == $n) | .id')
+          test -n "$container_id"
+          echo "CONTAINER_ID=$container_id" >> "$GITHUB_ENV"
+
+          status=$(curl -sf "${auth[@]}" -X PATCH \
+            -H "Content-Type: application/json" \
+            -d "{\"registry_image\": \"$REGISTRY/webapp:$IMAGE_TAG\"}" \
+            "$CONTAINERS_API/containers/$container_id" | jq -r '.status')
+          echo "status after update: $status"
+          if [ "$status" != "pending" ]; then
+            # PATCH did not trigger a rollout on its own — deploy explicitly.
+            curl -sf "${auth[@]}" -X POST -H "Content-Type: application/json" \
+              -d '{}' "$CONTAINERS_API/containers/$container_id/deploy" > /dev/null
+          fi
+
+      - name: Wait for rollout
+        run: |
+          set -euo pipefail
+          auth=(-H "X-Auth-Token: ${{ secrets.SCW_SECRET_KEY }}")
+          for i in $(seq 1 60); do
+            body=$(curl -sf "${auth[@]}" "$CONTAINERS_API/containers/$CONTAINER_ID")
+            status=$(jq -r '.status' <<< "$body")
+            echo "[$i] status=$status"
+            case "$status" in
+              ready)
+                domain=$(jq -r '.domain_name' <<< "$body")
+                echo "WEBAPP_URL=https://$domain" >> "$GITHUB_ENV"
+                exit 0 ;;
+              error) jq -r '.error_message' <<< "$body"; exit 1 ;;
+            esac
+            sleep 10
+          done
+          echo "rollout timed out"; exit 1
+
+      - name: Smoke test
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$WEBAPP_URL/")
+          echo "GET / -> HTTP $code"
+          echo "### deploy-webapp" >> "$GITHUB_STEP_SUMMARY"
+          echo "- image: \`$REGISTRY/webapp:$IMAGE_TAG\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- url: $WEBAPP_URL (GET / -> HTTP $code)" >> "$GITHUB_STEP_SUMMARY"
+          # Auth proxy: anonymous requests are redirected to /login.
+          test "$code" = "307"
