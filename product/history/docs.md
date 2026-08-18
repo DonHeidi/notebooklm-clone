@@ -1,7 +1,8 @@
 # Docs site — project history
 
 > **Status:** Snapshot as of 2026-08-18, written by session C4. Covers
-> `apps/docs` through sessions C3 and C4.
+> `apps/docs` through sessions C3 (PR [#14](https://github.com/DonHeidi/notebooklm-clone/pull/14))
+> and C4 (PR [#22](https://github.com/DonHeidi/notebooklm-clone/pull/22)).
 > Later sessions append below rather than rewriting.
 > **Sources:** PR descriptions, `handovers/`.
 
@@ -20,9 +21,10 @@
   `/impressum/` and `/datenschutz/` (with the `/privacy` redirect) and the
   footer legal nav, mirroring the marketing site — see
   `product/history/marketing.md` for the shared story.
-- **2026-08-18 — This History section, session C4.** A `history` content
-  collection pointed at `product/history/` and one page per package — the
-  pages you are reading now.
+- **2026-08-18 — This History section, session C4**
+  (PR [#22](https://github.com/DonHeidi/notebooklm-clone/pull/22)). A
+  `history` content collection pointed at `product/history/` and one page
+  per package — the pages you are reading now.
 
 ## Decisions and why
 
