@@ -4,3 +4,10 @@ provider "scaleway" {
   region = var.region
   zone   = var.zone
 }
+
+# Authenticates via SUPABASE_ACCESS_TOKEN from the environment. The token is
+# ACCOUNT-scoped (it controls the whole Supabase org, not just this project):
+# it is injected ephemerally at plan/apply time from the system keyring (see
+# AGENTS.md) and must never be written to tfvars, .env.local persisted values,
+# state, or Proton Pass.
+provider "supabase" {}

@@ -3,6 +3,35 @@
 Supabase provides auth/user management, Postgres, pgvector (RAG), and storage.
 Initialized with the Supabase CLI (pinned via mise: `mise exec -- supabase`).
 
+## Tool ownership: Terraform vs Supabase CLI (B5)
+
+The hosted project (`ahphkkvsofqmxkqzbica`) is managed by two tools with a
+hard boundary at the resource level:
+
+- **Terraform** (`infrastructure/supabase.tf`, adopted by import in B5) owns
+  the project **lifecycle**: existence, org, region, name, API-key mode
+  (`legacy_api_keys_enabled`), and reading the API keys
+  (`supabase_apikeys` data source → container env). It carries
+  `prevent_destroy`; a plan that wants to replace/destroy the project is
+  never applied (Free tier, no backups).
+- **Supabase CLI** owns everything else, exactly as before B5: migrations
+  (`supabase db push`), storage buckets/policies (via migrations), and all
+  runtime settings modeled by `config.toml` — auth (incl. the
+  `[remotes.demo]` overrides), api, storage, network restrictions, SSL
+  enforcement — applied with `supabase config push`.
+- The provider's `supabase_settings` resource is **deliberately not
+  instantiated**: every settings category it exposes (api, auth, database,
+  network, pooler, storage, ssl_enforcement) has a `config.toml`
+  namespace, so importing it would put every `config push` and every
+  `terraform apply` in a standing double-ownership fight over the same
+  fields. If Terraform ever needs a settings category, move that category's
+  ownership wholesale (delete it from `config.toml` remotes in the same
+  change) — never split a category across both tools.
+- The provider cannot manage migrations, storage policies, or general auth
+  config at all (v1.10.x surface: project, settings, apikey, branch,
+  edge_function, third_party_auth) — the CLI side of the split is not
+  optional.
+
 ## Local development
 
 - `mise exec -- supabase start` runs the full local stack (requires Docker).

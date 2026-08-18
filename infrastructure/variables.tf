@@ -45,19 +45,9 @@ variable "webapp_min_scale" {
   default     = 0
 }
 
-variable "supabase_url" {
+variable "supabase_db_password" {
   type        = string
-  description = "Hosted Supabase project URL (https://<ref>.supabase.co). Publishable."
-}
-
-variable "supabase_anon_key" {
-  type        = string
-  description = "Supabase anon/publishable key — safe to expose to browsers (RLS enforces access); kept out of the repo anyway. Set via TF_VAR_supabase_anon_key."
-}
-
-variable "supabase_service_role_key" {
-  type        = string
-  description = "Supabase service-role key — bypasses RLS, server only. Set via TF_VAR_supabase_service_role_key from .env.local — never in files."
+  description = "Postgres password of the hosted Supabase project (set at `supabase projects create`, B3). Consumed only on (re)creation — see ignore_changes in supabase.tf; not in state today (unreadable at import), it would land there only if the project were recreated (SEC-6). Set via TF_VAR_supabase_db_password (derived in .env.schema from SUPABASE_DB_PASSWORD) — never in files."
   sensitive   = true
 }
 
