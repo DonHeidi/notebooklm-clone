@@ -168,3 +168,18 @@ depended on them. The known process debts are the ones the friction list
 implies — shared build contracts between lanes are only caught at
 integration time, and hot-file resolution costs foreman attention on every
 overlapping merge.
+
+## Why human-in-the-loop between sessions (extended 2026-08-18, session C6)
+
+A natural question about this working model: why review at every session
+boundary instead of letting one long agentic loop run the whole roadmap?
+The owner's rationale, recorded here from the foreman exchange of
+2026-08-18: reviewing each session's output allows observation of
+intermediate results, so diversion or drift is detected early instead of
+compounding across an unattended run; and the checkpoints are where
+requirements get fine-tuned and external feedback injected. The roadmap
+itself is the evidence — C3 (legal pages before going public), C4–C6
+(history, architecture views, this rationale), and A7 (the D-9 test
+migration) were all added mid-flight at review boundaries, none of them in
+the original plan. The review gate is not overhead on the process; it is
+where the process steers.

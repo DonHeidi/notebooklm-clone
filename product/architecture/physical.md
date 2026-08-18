@@ -8,6 +8,19 @@
 > **Not yet real:** hosted Supabase (B3 pending — the webapp's data plane
 > runs against the *local* Supabase stack today) and Azure Speech (D-8
 > decided, wiring is D2's in-flight work).
+> **Extended 2026-08-18** (session C6): "Platform choice" section added,
+> referencing decision D-10.
+
+## Platform choice
+
+The target company works with AWS; running on Scaleway is a deliberate,
+owner-decided deviation — more cost-effective, less organisational
+overhead, and every building block on this page is deliberately
+interchangeable (the same Docker image, S3-compatible storage driven by
+`aws s3 sync`, an s3 Terraform backend, the D-4 provider abstraction).
+The decision, a per-building-block AWS interchange map verified against
+the code and workflows, and its honest caveats are recorded as **D-10**
+in `product/feasibility.md`.
 
 ## Topology
 

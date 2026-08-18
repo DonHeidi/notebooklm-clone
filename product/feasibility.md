@@ -300,6 +300,46 @@ Supabase stack.
 > CI workarounds (the exit-99 allowlist and `--timeout 30000`) are removed
 > and the plain `bun test` exit-code contract is restored.
 
+### D-10 — Scaleway as the platform, a deliberate deviation from the target company's AWS
+
+**Owner decision, recorded 2026-08-18 (session C6; the decision itself
+predates the project — Scaleway was a declared parameter of this study, see
+the Question header above — and the rationale was stated by the owner for
+the roadmap's C6 row).**
+
+The company this challenge is for works with AWS. Using Scaleway is a
+deliberate deviation from that context. The owner's rationale: Scaleway is
+more cost-effective and carries less organisational overhead; and the
+building blocks are deliberately interchangeable — provisioning on AWS is
+straightforwardly accomplishable without a migration headache.
+
+The interchangeability claim, substantiated against the actual code and
+workflows as merged:
+
+| Building block (as built) | AWS equivalent | What actually changes |
+| --- | --- | --- |
+| Scaleway Serverless Containers running the D-1 standalone Docker image (`apps/webapp/Dockerfile` — nothing Scaleway-specific in it) | App Runner / ECS Fargate | The image is unchanged; only where it runs |
+| Object storage: Scaleway is **S3-compatible** — `deploy-static-sites.yml` already drives it with `aws s3 sync` and AWS-named credentials against a Scaleway endpoint | Native S3 (+ CloudFront where Edge Services would have been, B3) | Drop `--endpoint-url`, swap credentials and bucket names; bucket-website config → S3 static website hosting |
+| Terraform state: `backend "s3"` against Scaleway with four `skip_*` compatibility flags and **no locking** (`infrastructure/versions.tf`) | Native S3 backend | The `skip_*` flags drop; state locking (S3 lockfile / DynamoDB) becomes available — an *improvement* over the current no-locking caveat |
+| Container registry `rg.fr-par.scw.cloud` | ECR | Login/push lines in `deploy-webapp.yml` |
+| The one Scaleway-proprietary workflow touch: the Containers API PATCH + rollout wait in `deploy-webapp.yml` (43 lines) | The equivalent App Runner deploy step | This section is rewritten; the build/push/smoke-test steps around it stay |
+| LLM + embeddings via `@ai-sdk/openai-compatible` (D-4, NF-16) | AI SDK Bedrock provider — a provider-package swap, not a rewrite — or any OpenAI-compatible endpoint | Config + provider package; see caveat below |
+| Platform-independent, moves not at all | — | Supabase (its own vendor, not Scaleway), Azure Speech (already multi-cloud by D-8), GitHub Actions, the entire application code |
+
+**Honest caveats — the claim is "no migration headache", not "zero work":**
+
+- The Terraform layer is a **rewrite, not a copy**: 8 `scaleway_*` resources
+  across ~170 lines of `infrastructure/*.tf` become their `aws_*`
+  equivalents. Small surface, but every resource is re-authored.
+- Changing the embedding model (Bedrock hosts different models than
+  Scaleway's `qwen3-embedding-8b`) means **re-embedding the corpus** and
+  revisiting the `vector(2000)` column decision — the abstraction swaps the
+  API cleanly, but stored vectors are model-specific.
+- Costs, free tiers, and limits differ; the running-cost table above is
+  Scaleway-specific and would need redoing.
+- Scaleway model EOL churn (D-4 caveat) is traded for AWS's own model
+  lifecycle; neither is churn-free.
+
 ## Architecture (resulting shape)
 
 ```text
