@@ -61,6 +61,7 @@ lanes need a shared `main`. **Blocks everything.**
 | B2 | `feat/ci-deploy` | CI (lint, test, build), webapp deploy pipeline on the D-7 outcome, Terraform state → S3 backend, bucket deploy for static sites. | B1 |
 | B3 | `feat/demo-env` | Supabase Pro, demo-mode scaling (min-scale 1 or VM), Edge Services/custom domains only if time allows. | B2 |
 | B4 | `feat/custom-domain` | Custom domain `mrgnl.eu` (owner-registered at Scaleway): DNS zone in Terraform, Edge Services pipelines for docs/www (subdomain-only constraint), container domain for app.mrgnl.eu, apex redirect, Supabase auth URL updates. Added 2026-08-18. | B3; owner registers the domain first |
+| B5 | `feat/supabase-terraform` | Hosted Supabase project under Terraform via the official `supabase/supabase` provider (registry-verified v1.10.1: project/settings/apikey resources): **import-only** adoption of the existing project, `prevent_destroy`, zero-diff plan gate before any apply; settings/API keys as code; tool-ownership split vs the Supabase CLI documented (migrations, storage policies, auth config stay CLI-owned). Collapses teardown/redeploy into the Terraform flow. Owner-approved 2026-08-18. | B3, B4 |
 
 ### Lane C — Static sites (parallel, fully independent)
 
