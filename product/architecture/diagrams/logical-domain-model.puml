@@ -1,0 +1,84 @@
+@startuml logical-domain-model
+' Domain model as implemented — source of truth:
+' apps/webapp/src/server/db/schema.ts
+!theme plain
+hide circle
+hide empty methods
+
+class "auth.users" as users <<Supabase-managed>> {
+  id : uuid
+}
+note right of users
+  Never modeled in Drizzle —
+  referenced by owner_id
+  without a foreign key
+end note
+
+class notebooks {
+  id : uuid
+  owner_id : uuid
+  title : text
+}
+
+class sources {
+  id : uuid
+  type : file | text | url
+  status : pending | processing | ready | failed
+  storage_path | url | content (one per type)
+  error_message : text?
+}
+
+class chunks {
+  id : uuid
+  chunk_index : int
+  text : text
+  char_start, char_end : int
+  page_number : int?
+  embedding : vector(2000), HNSW cosine
+  fts : tsvector (generated), GIN
+}
+
+class conversations {
+  id : uuid
+  title : text?
+}
+
+class messages {
+  id : uuid
+  role : user | assistant
+  content : text
+}
+
+class citations {
+  id : uuid
+  ordinal : int
+  quote : text
+}
+
+class notes {
+  id : uuid
+  title : text
+  content : text
+}
+
+users "1" <-- "*" notebooks : owner_id
+notebooks "1" *-- "*" sources : cascade
+sources "1" *-- "*" chunks : cascade
+notebooks "1" *-- "*" conversations : cascade
+conversations "1" *-- "*" messages : cascade
+messages "1" *-- "*" citations : cascade
+citations "*" --> "1" chunks : chunk_id (cascade)
+notebooks "1" *-- "*" notes : cascade
+notes "*" ..> "0..1" messages : source_message_id\n(on delete: set null)
+
+note bottom of chunks
+  unique (source_id, chunk_index);
+  content.slice(charStart, charEnd) === text
+end note
+
+note bottom of citations
+  unique (message_id, ordinal);
+  ordinal IS the [n] marker as
+  rendered in the message text
+end note
+@enduml

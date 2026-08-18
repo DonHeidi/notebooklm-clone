@@ -1,0 +1,36 @@
+@startuml development-layers
+' The DDD layer rule — source of truth: apps/webapp/AGENTS.md,
+' the src/server/ package layout
+!theme plain
+skinparam componentStyle rectangle
+
+package "apps/webapp/src" {
+  ["app view\nsrc/app/**/page.tsx\nsrc/components/**"] as View
+  ["URL path\nserver actions (actions.ts)\nroute handlers (route.ts)\nproxy.ts"] as URL
+  ["business layer\nsrc/server/services"] as Service
+  ["repository\nsrc/server/repositories"] as Repo
+  ["database\nsrc/server/db\nDrizzle client + schema.ts"] as DB
+}
+
+database "supabase/migrations\none timestamp-ordered timeline:\ndrizzle-generated + hand-written" as Mig
+
+View --> URL
+URL --> Service
+Service --> Repo
+Repo --> DB
+DB ..> Mig : drizzle-kit generate,\nnever push (D-3)
+
+note right of URL
+  Owner always re-derived from the
+  verified JWT (requireUser()) —
+  the proxy is never the authority.
+end note
+
+note right of Repo
+  The ONLY layer that touches db.
+  Factory functions taking Database —
+  tests inject PGlite (real Postgres
+  pending, D-9). Every method takes
+  and applies ownerId (SEC-5).
+end note
+@enduml

@@ -80,6 +80,39 @@ export const historyPages: { id: string; label: string; text: string }[] = [
   },
 ];
 
+/**
+ * The 4+1 architectural views in `product/architecture/`, in Kruchten's
+ * canonical order. Labels are maintained here because the canonical files
+ * have no frontmatter (same reasoning as the history pages).
+ */
+export const architecturePages: { id: string; label: string; text: string }[] = [
+  {
+    id: "logical",
+    label: "Logical view",
+    text: "The notebook aggregate as implemented: sources → chunks, conversations → citations, ownership scoping, hybrid retrieval, the grounding contract.",
+  },
+  {
+    id: "process",
+    label: "Process view",
+    text: "Runtime dynamics: the grounded-chat request end to end, the ingestion pipeline, token refresh, and the concurrency realities.",
+  },
+  {
+    id: "development",
+    label: "Development view",
+    text: "The monorepo, the DDD layer rule and where it's enforced, testing strategy, toolchain, conventions, and CI.",
+  },
+  {
+    id: "physical",
+    label: "Physical view",
+    text: "Deployment topology: the Scaleway container and buckets, Supabase, the model APIs, deploy workflows, and the secrets flow.",
+  },
+  {
+    id: "scenarios",
+    label: "Scenarios",
+    text: "The +1: four use cases traced through the other views, each backed by a recorded end-to-end verification run.",
+  },
+];
+
 export async function getNavGroups(): Promise<NavGroup[]> {
   const sessions = await getSessions();
   return [
@@ -97,6 +130,16 @@ export async function getNavGroups(): Promise<NavGroup[]> {
     {
       label: "Decisions",
       items: [{ href: "/decisions/", label: "Feasibility study" }],
+    },
+    {
+      label: "Architecture",
+      items: [
+        { href: "/architecture/", label: "Overview" },
+        ...architecturePages.map((p) => ({
+          href: `/architecture/${p.id}/`,
+          label: p.label,
+        })),
+      ],
     },
     {
       label: "Roadmap",

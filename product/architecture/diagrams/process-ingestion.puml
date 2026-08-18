@@ -1,0 +1,39 @@
+@startuml process-ingestion
+' The ingestion pipeline (feasibility D-2 stage 1) — source of truth:
+' apps/webapp/src/app/notebooks/[id]/sources/actions.ts,
+' src/server/services/ingestion-service.ts
+!theme plain
+autonumber
+
+actor Browser
+participant "Supabase\nStorage" as Storage
+participant "sources/\nactions.ts" as Action
+participant "ingestion-\nservice.ts" as Pipeline
+participant "Scaleway\nembeddings" as Embed
+database Postgres
+
+Browser -> Storage : file upload goes DIRECT (D-5)\n<userId>/<uuid>/<filename>
+Browser -> Action : addFileSourceAction(path)\n(requireUser())
+Action -> Postgres : create source row\n(status: pending)
+Action --> Browser : returns immediately
+Action ->> Pipeline : after() — detached\ningestSource(), never throws
+activate Pipeline
+Pipeline -> Postgres : status: processing
+Pipeline -> Storage : download via service-role client\n(after() has no request cookies;\napp-layer ownership checks gate it)
+Pipeline -> Pipeline : parse — PDF (unpdf, per page) |\nUTF-8 text | URL: SSRF-guarded\nfetch (SEC-1) + Readability
+Pipeline -> Pipeline : guards (NF-15): 20 MB/file ·\n200k words/source (post-parse) ·\n50 sources/notebook
+Pipeline -> Pipeline : chunk ~400 tokens, 40 overlap,\nexact char offsets; PDFs per page
+Pipeline -> Embed : embed chunks (batched,\norder-preserving; 2000 dims asserted)
+Pipeline -> Postgres : content + replaceChunks (atomic),\nthen status: ready
+deactivate Pipeline
+
+note right of Pipeline
+  Any failure → status: failed +
+  truncated, user-readable
+  errorMessage (no stacks)
+end note
+
+loop only while a source is pending/processing
+  Browser -> Action : poll source list every 2.5 s\n(A3 decision: polling over Realtime)
+end
+@enduml

@@ -1,0 +1,44 @@
+@startuml physical-topology
+' Deployment topology — source of truth: infrastructure/*.tf,
+' apps/webapp/Dockerfile, .github/workflows/deploy-*.yml
+!theme plain
+skinparam nodesep 25
+skinparam ranksep 35
+
+actor "Users / browser" as User
+
+node "Scaleway fr-par" {
+  node "Serverless Container" as Container {
+    artifact "marginalia-webapp\nNext.js standalone on Node 24 (D-1)\n1 vCPU / 2 GB · min 0 / max 2\nport 3000, HTTPS only" as WebappArt
+  }
+  node "Container Registry\nrg.fr-par…/marginalia" as Registry
+  cloud "Generative APIs\nOpenAI-compatible (D-4)\nchat + embeddings" as GenAPI
+  node "Object Storage" as OS {
+    artifact "marginalia-docs · marginalia-marketing\n(website buckets, HTTPS endpoints)" as Sites
+    artifact "marginalia-tfstate (versioned;\nterraform S3 backend, no state locking)" as Tfstate
+  }
+}
+
+node "Supabase — LOCAL stack today,\nhosted project pending B3" as Supabase {
+  artifact "Auth (JWT / cookie sessions)\nPostgres + pgvector (HNSW, RLS)\nStorage (sources bucket, RLS)" as SbArt
+}
+
+cloud "Azure AI Speech\nwesteurope (D-8)\nPENDING — D2 in flight" as Azure
+
+node "GitHub Actions\n(manual workflow_dispatch)" as CI
+
+' Layout hints: keep the bucket artifacts and the registry/API pair
+' stacked so the diagram fits the docs column.
+Sites -[hidden]down- Tfstate
+Registry -[hidden]down- GenAPI
+
+User --> Container : HTTPS — SSE verified\nunbuffered (D-7 / S-1)
+User --> Sites : HTTPS
+User --> SbArt : direct file\nupload (D-5)
+Container --> Supabase : auth · pooled SQL ·\nstorage (service-role,\napp-gated)
+Container --> GenAPI : chat +\nembeddings
+Container ..> Azure : synthesize() —\npending D2
+Registry ..> Container : image pull\n:sha-<12>
+CI --> Registry : deploy-webapp.yml\nbuild + push, PATCH rollout
+CI --> OS : deploy-static-sites.yml\ns3 sync
+@enduml

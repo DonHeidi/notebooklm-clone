@@ -18,4 +18,8 @@ const history = defineCollection({
   loader: glob({ pattern: "*.md", base: "../../product/history" }),
 });
 
-export const collections = { product, handovers, history };
+const architecture = defineCollection({
+  loader: glob({ pattern: "*.md", base: "../../product/architecture" }),
+});
+
+export const collections = { product, handovers, history, architecture };

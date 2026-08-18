@@ -1,0 +1,47 @@
+@startuml process-grounded-chat
+' The grounded-chat request — source of truth:
+' apps/webapp/src/app/notebooks/[id]/chat/route.ts,
+' src/server/services/chat-service.ts
+!theme plain
+skinparam maxMessageSize 170
+autonumber
+
+actor Browser
+participant "proxy.ts" as Proxy
+participant "chat route.ts" as Route
+participant "chat-service.ts" as Service
+participant "source-repository" as Repo
+participant "Scaleway\nGenerative APIs" as LLM
+database Postgres
+
+Browser -> Proxy : POST /notebooks/[id]/chat\n{messages, selectedSourceIds}
+Proxy -> Proxy : getClaims() — verify + refresh\nJWT, rotate cookies
+Proxy -> Route : forward
+Route -> Route : verified JWT? (else 401)\nowner's notebook? (else 404)\nvalid last user message? (else 400)
+Route -> Service : prepareGrounding()\n(before the stream opens —\nprovider failures are a plain 502)
+alt zero sources selected
+  Service --> Route : zero-source prompt,\nretrieval skipped entirely
+else sources selected
+  Service -> LLM : embed(question)
+  Service -> Repo : hybridSearchChunks\n(HNSW cosine + fts, RRF-fused, top 10)
+  Repo -> Postgres : one SQL statement, scoped to\nowner + selection + status='ready'
+  Service --> Route : delimited system prompt (SEC-3)
+end
+Route -> Postgres : persist user message
+Route -> LLM : streamText — no tools,\nlast 12 messages as context
+loop token stream (SSE)
+  LLM --> Route : text delta
+  Route --> Browser : text-delta part
+  Route --> Browser : data-citation part at the FIRST\noccurrence of each valid [n]
+end
+Route -> Postgres : persist assistant message +\ncitations, transactionally
+
+note over Browser, Route
+  Stop/abort limitation (A4): behind the
+  Next proxy a mid-stream client disconnect
+  does NOT fire request.signal promptly —
+  the UI stop always works, but server-side
+  generation runs to completion and the
+  full answer persists.
+end note
+@enduml
