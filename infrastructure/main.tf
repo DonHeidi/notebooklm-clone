@@ -1,3 +1,18 @@
+# --- Terraform state bucket ---------------------------------------------------
+# Bootstrap chicken-and-egg (B2): this bucket stores the very state that tracks
+# it. It was created with `terraform apply` while the state was still local,
+# then the state was migrated into it (`terraform init -migrate-state`, see
+# versions.tf). From then on the bucket is tracked by the state it stores —
+# fine as long as it is never destroyed (versioning below is the safety net).
+
+resource "scaleway_object_bucket" "tfstate" {
+  name = "${var.project_name}-tfstate"
+
+  versioning {
+    enabled = true
+  }
+}
+
 # --- Static sites: docs + marketing (object storage website buckets) --------
 
 resource "scaleway_object_bucket" "docs" {
