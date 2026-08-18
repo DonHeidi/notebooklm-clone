@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "target-scope");
+if (!entry) throw new Error("product/target-scope.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/target-scope.md"
+  title="Target scope — Marginalia Docs"
+  description="What Marginalia v1 is, item by item — the shipped 7-day-prototype end state with status and PR evidence."
+/>
