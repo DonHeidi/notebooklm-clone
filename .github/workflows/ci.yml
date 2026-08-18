@@ -56,6 +56,10 @@ jobs:
         # --timeout 30000: the first PGlite instantiation (WASM compile) can
         # exceed bun's default 5 s per-test/hook timeout on slow CI runners,
         # failing a repository test file's beforeAll as "(unnamed)".
+        #
+        # Both workarounds are INTERIM: decision D-9 (product/feasibility.md,
+        # 2026-08-18) moves DB-backed tests to a real Postgres container —
+        # remove the exit-99 guard and the raised timeout when that lands.
         run: |
           set +e
           bun test --timeout 30000 2>&1 | tee bun-test.log

@@ -14,4 +14,8 @@ const handovers = defineCollection({
   loader: glob({ pattern: "*.md", base: "../../handovers" }),
 });
 
-export const collections = { product, handovers };
+const history = defineCollection({
+  loader: glob({ pattern: "*.md", base: "../../product/history" }),
+});
+
+export const collections = { product, handovers, history };

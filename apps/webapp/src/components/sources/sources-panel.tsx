@@ -9,6 +9,7 @@ import {
 } from "@/app/notebooks/[id]/sources/actions";
 import { AddSourcesDialog } from "@/components/sources/add-sources-dialog";
 import { SourceViewer } from "@/components/sources/source-viewer";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,10 +39,19 @@ export function SourcesPanel({
   notebookId,
   userId,
   initialSources,
+  selectedIds,
+  onToggleSource,
+  onSourcesUpdated,
 }: {
   notebookId: string;
   userId: string;
   initialSources: SourceListItem[];
+  /** Chat-grounding selection (CF-05): ready sources whose checkbox is on. */
+  selectedIds: string[];
+  onToggleSource: (sourceId: string) => void;
+  /** Fires after every list refresh so the workspace can reconcile the
+   * selection (auto-select newly ready sources, drop deleted ones). */
+  onSourcesUpdated: (sources: SourceListItem[]) => void;
 }) {
   const [sources, setSources] = useState(initialSources);
   const [viewerSourceId, setViewerSourceId] = useState<string | null>(null);
@@ -50,6 +60,10 @@ export function SourcesPanel({
   const refresh = useCallback(async () => {
     setSources(await listSourcesAction(notebookId));
   }, [notebookId]);
+
+  useEffect(() => {
+    onSourcesUpdated(sources);
+  }, [sources, onSourcesUpdated]);
 
   const hasActive = sources.some(
     (s) => s.status === "pending" || s.status === "processing",
@@ -100,6 +114,8 @@ export function SourcesPanel({
             <SourceRow
               key={source.id}
               source={source}
+              selected={selectedIds.includes(source.id)}
+              onToggle={() => onToggleSource(source.id)}
               onOpen={() => setViewerSourceId(source.id)}
               onDelete={() => setPendingDelete(source)}
             />
@@ -140,10 +156,14 @@ export function SourcesPanel({
 
 function SourceRow({
   source,
+  selected,
+  onToggle,
   onOpen,
   onDelete,
 }: {
   source: SourceListItem;
+  selected: boolean;
+  onToggle: () => void;
   onOpen: () => void;
   onDelete: () => void;
 }) {
@@ -151,6 +171,13 @@ function SourceRow({
   const processing = source.status === "pending" || source.status === "processing";
   return (
     <li className="group flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent">
+      {source.status === "ready" && (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={onToggle}
+          aria-label={`Use ${source.title} to ground the chat`}
+        />
+      )}
       <button
         type="button"
         onClick={onOpen}

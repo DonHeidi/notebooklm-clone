@@ -1,0 +1,39 @@
+---
+import Base from "../../layouts/Base.astro";
+import { historyPages } from "../../nav";
+---
+
+<Base
+  title="Project history — Marginalia Docs"
+  description="A per-package history of the project so far: what was built, the decisions and why, and the problems and how they were dealt with — rendered from product/history/."
+>
+  <div class="max-w-3xl">
+    <p class="eyebrow">History</p>
+    <h1 class="font-display mt-3 text-4xl font-medium">The project so far</h1>
+    <p class="text-ink-soft mt-4 leading-relaxed">
+      One page per package: what was built (with dates and PR numbers), the technical decisions
+      and why they were made, and the problems encountered — including the ones that were
+      consciously accepted rather than fixed. Every claim traces back to a PR, a handover, or a
+      product document. These pages are snapshots (as of 2026-08-18); later sessions append to
+      them.
+    </p>
+
+    <ul class="mt-10 space-y-4">
+      {
+        historyPages.map((p) => (
+          <li class="border-line rounded border bg-card p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 class="text-lg font-semibold">
+                <a href={`/history/${p.id}/`} class="hover:underline hover:underline-offset-2">
+                  {p.label}
+                </a>
+              </h2>
+              <span class="source-path">product/history/{p.id}.md</span>
+            </div>
+            <p class="text-ink-soft mt-2 text-sm leading-relaxed">{p.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Base>
