@@ -118,7 +118,10 @@ export async function getNavGroups(): Promise<NavGroup[]> {
   return [
     {
       label: "Start",
-      items: [{ href: "/", label: "Overview" }],
+      items: [
+        { href: "/", label: "Overview" },
+        { href: "/faq/", label: "Quick answers" },
+      ],
     },
     {
       label: "Product",
