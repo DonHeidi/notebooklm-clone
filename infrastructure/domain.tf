@@ -92,7 +92,10 @@ resource "scaleway_edge_services_head_stage" "site" {
 # Edge Services creates and OWNS the CNAME to its pipeline endpoint itself
 # (TTL 60, target <pipeline>.svc.edge.scw.cloud) — Terraform-managing a
 # duplicate fails (CNAME uniqueness) and would fight the platform's
-# self-management. Deleting a dns_stage removes its record again.
+# self-management. Caveat: destroying a dns_stage deletes its CNAME, but
+# recreating one via the API does NOT re-add it — re-add the record
+# manually (same TTL-60 shape) and no-op PATCH the dns_stage to force
+# revalidation (see the B4 handover, gotcha 6).
 
 # --- Apex: mrgnl.eu -> 301 https://www.mrgnl.eu -------------------------------
 # Edge Services cannot serve the apex; a minimal serverless function can

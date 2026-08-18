@@ -53,11 +53,26 @@ app./docs./www.mrgnl.eu + apex redirect — old default endpoints intact.
 3. **Scaleway node functions are ESM** — the runtime wraps sources with
    `"type": "module"`; `module.exports` fails to import (HTTP 500,
    `handler could not be imported`). Use `export const handle = …`.
-4. **LE rate-limit interaction**: repeated failed pipeline configs burn
-   Let's Encrypt failed-validation budget (5/hostname/hour) — the docs
-   cert had to wait out a cooldown after the gotcha-2 rebuild. Don't
-   loop-recreate TLS stages when a cert fails; diagnose first, wait, then
-   retry once.
+4. **Stage deletes 500 while referenced.** DELETE on a tls_stage that a
+   dns_stage still links (and on a head_stage whose target is gone)
+   returns a bare 500, which surfaces through Terraform as an opaque
+   `Internal error`. Replace linked stages *together* so Terraform
+   detaches in dependency order; when the platform object is already
+   gone, `terraform state rm` + re-apply instead of `-replace`.
+5. **The provider cannot see head-stage drift.** After the docs rebuild
+   the platform reported `pipeline_missing_head_stage` while
+   `terraform plan` said "no changes" — the head pointer had to be
+   state-rm'd and re-applied. Check the pipeline's `errors[]` via the API
+   whenever status is `error`; the fine-grained codes never surface in
+   Terraform.
+6. **Destroying a dns_stage deletes its auto-managed CNAME — recreating
+   one does NOT bring it back** (API path; the console flow would). The
+   record had to be re-added manually (matching the platform's TTL-60
+   shape), then a no-op PATCH on the dns_stage (`fqdns` unchanged)
+   forced revalidation: status went error → pending → ready within a
+   minute. Side effect: resolvers that queried during the deleted window
+   negative-cache the name — looks like an outage from an affected
+   machine while every fresh resolver works.
 
 ## Verification evidence (2026-08-18)
 
@@ -66,7 +81,7 @@ app./docs./www.mrgnl.eu + apex redirect — old default endpoints intact.
 | `https://app.mrgnl.eu/` | 307 → `/login`, cert CN=app.mrgnl.eu, Let's Encrypt (YR2), expires 2026-11-16 |
 | `https://www.mrgnl.eu/` | HTTP 200, cert CN=www.mrgnl.eu, LE (YR1), expires 2026-11-16 |
 | `https://mrgnl.eu/some/path` | **301 → `https://www.mrgnl.eu/some/path`**, cert CN=mrgnl.eu, LE (YR1), expires 2026-11-16 |
-| `https://docs.mrgnl.eu/` | see "Docs cert" below |
+| `https://docs.mrgnl.eu/` | HTTP 200, cert CN=docs.mrgnl.eu, LE (YR2), expires 2026-11-16 (after the gotcha-4/5/6 repair sequence) |
 | Auth round trip on app.mrgnl.eu | anon → /login redirect; signup (1.3 s) → library; sign out; login → library — all on the new origin |
 | Old endpoints | webapp default 307, docs bucket 200, marketing bucket 200 — nothing broken |
 
@@ -74,9 +89,18 @@ DNS propagation caveat: fresh records (apex/app TTL 3600, pipeline CNAMEs
 TTL 60) — resolvers that cached NXDOMAIN before registration may lag up to
 their negative-TTL.
 
-### Docs cert
+### Docs cert — what actually happened
 
-<!-- resolved before PR: outcome of the post-cooldown retry -->
+The docs pipeline broke in three stacked ways, all traced and fixed
+(gotchas 2, 4–6): the initial `edge_api_key` race left a TLS stage in TF
+state that the platform had deleted; the repair rebuild lost the pipeline's
+head-stage pointer (invisible to `terraform plan`); and rebuilding the DNS
+stage silently deleted the auto-managed CNAME without recreating it. The
+Let's Encrypt certificate itself issued fine (15:39Z) once validation could
+reach a coherent pipeline; final state `ready` + HTTP 200 at 16:37Z. The
+`www` pipeline — created in one clean serial pass — never had any of these
+problems, which is the strongest argument for `-parallelism=1` on
+first-time Edge Services applies.
 
 ## Cost delta
 
