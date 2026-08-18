@@ -5,10 +5,18 @@ Terraform for Scaleway. Provider: `scaleway/scaleway` (version constraint in
 
 ## State
 
-Local state for now (`terraform.tfstate`, gitignored). Planned migration to the
-Scaleway S3-compatible backend once the environment exists — the backend block
-is prepared (commented) in `versions.tf`; migrate with
-`terraform init -migrate-state`.
+Remote state on the Scaleway S3-compatible backend (bucket
+`marginalia-tfstate`, versioned; backend block in `versions.tf`; migrated in
+session B2). The s3 backend does not read `SCW_*` variables — every state
+touching command needs the same credentials exported under AWS names:
+
+```sh
+AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY \
+  mise exec -- terraform <cmd>
+```
+
+There is no state locking (no DynamoDB equivalent on Scaleway) — coordinate
+manually; only one person/pipeline runs apply at a time.
 
 ## Resources
 
