@@ -99,6 +99,24 @@ job state lives in `sources.status` from day one.
   - Delete (from viewer, with confirmation): source row, its 35 chunks, and
     the storage object all removed. Browser console clean.
 
+> **Note (2026-08-18, session A3) — local Supabase keys in `.env.local`.**
+> This session appended `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+> `SUPABASE_SERVICE_ROLE_KEY` to the untracked `.env.local`, filled with the
+> **standard local `supabase start` demo JWTs** (the fixed values every local
+> stack issues, signed with the public dev JWT secret — they only work
+> against `127.0.0.1:54321` and are **not secrets**; the never-commit rule is
+> not in play, and they still live only in the untracked file). Why: both
+> variables are `@required` in `.env.schema`, and varlock validates the full
+> schema before running *any* command — with them empty, every
+> `bunx varlock run -- …` refused to start (B1's gotcha #3; B1 worked around
+> it by sourcing `.env.local` directly). With the values present, the
+> documented varlock path works end-to-end for all later sessions.
+> `.env.local` lives in the main checkout and is symlinked into worktrees,
+> so this applies machine-wide. The **hosted** Supabase project's anon and
+> service-role keys remain real secrets — they come from Proton Pass /
+> CI injection and must never land in a committed file; the local demo
+> values would simply not work against a hosted instance.
+
 ## Hot files touched
 
 - `bun.lock` + `apps/webapp/package.json`: new deps `unpdf`,
