@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Check, Loader2, Pin, SendHorizontal, Square, Trash2 } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  MessagesSquare,
+  Pin,
+  SendHorizontal,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { clearChatAction } from "@/app/notebooks/[id]/chat/actions";
 import { saveMessageAsNoteAction } from "@/app/notebooks/[id]/notes/actions";
 import { AssistantMarkdown } from "@/components/chat/assistant-markdown";
@@ -30,6 +38,14 @@ import {
 // Chat panel (ui-research §2.2): streamed grounded answers with inline
 // citation chips, the "N sources" counter as the visible CF-05 contract,
 // stop while streaming, and clear-chat.
+
+// Offered in the empty state while sources are selected — one click sends
+// the question, so the first grounded answer is one interaction away.
+const EXAMPLE_QUESTIONS = [
+  "Summarize the selected sources",
+  "What are the key decisions, and why?",
+  "Where do the sources disagree?",
+];
 
 function citationsByOrdinal(message: ChatUIMessage): Map<number, CitationData> {
   const map = new Map<number, CitationData>();
@@ -155,10 +171,39 @@ export function ChatPanel({
       <div className="flex min-h-0 flex-1 flex-col">
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-4">
           {messages.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-muted-foreground">
-              Ask a question about your selected sources — answers come with
-              citations you can trace. With no sources selected, answers come
-              from general knowledge instead.
+            <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
+              <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                <MessagesSquare className="size-5 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Ask your sources</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Answers come with citations you can trace to the exact
+                  passage. With no sources selected, answers come from general
+                  knowledge instead.
+                </p>
+              </div>
+              {selectedSourceIds.length > 0 && (
+                <div className="flex max-w-md flex-wrap justify-center gap-2">
+                  {EXAMPLE_QUESTIONS.map((question) => (
+                    <button
+                      key={question}
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        clearError();
+                        void sendMessage(
+                          { text: question },
+                          { body: { selectedSourceIds } },
+                        );
+                      }}
+                      className="rounded-full border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

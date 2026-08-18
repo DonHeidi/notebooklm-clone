@@ -13,7 +13,9 @@ import {
 } from "@/server/ai/grounding";
 import { getAuthenticatedUser } from "@/server/auth";
 import {
+  assertChatMessageQuota,
   CHAT_HISTORY_WINDOW,
+  ChatQuotaError,
   getOrCreateConversation,
   persistAssistantMessage,
   persistUserMessage,
@@ -75,6 +77,17 @@ export async function POST(
   const question = messageText(lastMessage);
   if (question === "") {
     return new Response("The message is empty.", { status: 400 });
+  }
+
+  // Daily quota before any retrieval/generation spend (SF-11 / NF-15). The
+  // plain-text body becomes the client error banner's message.
+  try {
+    await assertChatMessageQuota(notebookId, user.id);
+  } catch (error) {
+    if (error instanceof ChatQuotaError) {
+      return new Response(error.message, { status: 429 });
+    }
+    throw error;
   }
 
   // Retrieval + prompt before the stream opens, so provider failures here

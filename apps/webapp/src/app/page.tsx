@@ -1,6 +1,6 @@
-import { Plus } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
-import { createNotebookAction } from "@/app/notebooks/actions";
+import { NewNotebookButton } from "@/components/new-notebook-button";
 import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
@@ -30,21 +30,23 @@ export default async function LibraryPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">Notebooks</h1>
-          <form action={createNotebookAction}>
-            <Button type="submit">
-              <Plus data-icon="inline-start" />
-              New notebook
-            </Button>
-          </form>
+          <NewNotebookButton />
         </div>
 
         {notebooks.length === 0 ? (
-          <div className="mt-16 flex flex-col items-center gap-2 text-center">
-            <p className="text-lg font-medium">No notebooks yet</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Create a notebook to collect sources and chat with them. You can
-              rename it any time.
-            </p>
+          <div className="mt-12 flex flex-col items-center gap-4 rounded-xl border border-dashed px-6 py-16 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <BookOpen className="size-6 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-lg font-medium">Create your first notebook</p>
+              <p className="max-w-sm text-sm text-muted-foreground">
+                A notebook collects sources — PDFs, websites, pasted text — and
+                answers questions grounded in them, with citations you can
+                trace. You can rename it any time.
+              </p>
+            </div>
+            <NewNotebookButton align="center" />
           </div>
         ) : (
           <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

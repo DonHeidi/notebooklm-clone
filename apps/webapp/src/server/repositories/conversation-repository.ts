@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists, inArray, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, gte, inArray, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import {
   chunks,
@@ -157,6 +157,30 @@ export function createConversationRepository(database: Database) {
           .where(eq(conversations.id, conversationId));
         return { ...message, citations: inserted };
       });
+    },
+
+    // Quota input (SF-11 / NF-15): user messages sent in this notebook since
+    // a point in time — the per-day chat cap counts questions, not answers.
+    // Owner scoping travels through the conversation → notebook join.
+    async countUserMessagesForNotebookSince(
+      notebookId: string,
+      ownerId: string,
+      since: Date,
+    ): Promise<number> {
+      const [row] = await database
+        .select({ value: count() })
+        .from(messages)
+        .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+        .innerJoin(notebooks, eq(notebooks.id, conversations.notebookId))
+        .where(
+          and(
+            eq(conversations.notebookId, notebookId),
+            eq(notebooks.ownerId, ownerId),
+            eq(messages.role, "user"),
+            gte(messages.createdAt, since),
+          ),
+        );
+      return row.value;
     },
 
     // Save-as-note (CF-10) needs the persisted message a note points at.

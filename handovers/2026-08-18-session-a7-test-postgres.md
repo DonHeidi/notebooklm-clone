@@ -49,6 +49,14 @@ against a `pgvector/pgvector:pg17` service container.
 
 ## ⚠️ Open item for the foreman: pre-existing lint failure gates green CI
 
+> **Update (2026-08-18, session A6):** resolved before A6 started — PR
+> [#35](https://github.com/DonHeidi/notebooklm-clone/pull/35)
+> (`fix/studio-lint`, merged 2026-08-18) restructured both effects as
+> render-time state adjustments and removed the unused eslint-disable.
+> Verified in A6: `bun run lint` exits 0 on current main, and main's recent
+> `ci` runs (e.g. PRs #44–#47) conclude **success**. The item below is kept
+> unchanged for the chronological record.
+
 Main's CI has been red at the **Lint** step since the #28/#29 merges
 (before this session): 2 × `react-hooks/set-state-in-effect` in
 `src/components/studio/audio-overview-dialog.tsx:53` and
