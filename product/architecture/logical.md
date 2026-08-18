@@ -120,6 +120,10 @@ function, so the exact production query runs in the tests and the logic
 stays visible in the repository layer — the DDD trace stays intact (A4
 decision, `handovers/2026-08-18-session-a4-grounded-chat.md`).
 
+*The full RAG pipeline this query sits in — which models embed and answer,
+triggered by what, bounded by which quotas — is traced end to end in the
+[generative view](../architecture/generative.md) (added 2026-08-18, session C9).*
+
 ## The grounding contract (SEC-3)
 
 Source content is untrusted input (NF-17). The contract, implemented in

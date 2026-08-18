@@ -1,0 +1,43 @@
+@startuml generative-topology
+' The generative surface — source of truth: src/server/ai/*,
+' src/server/audio/*, chat-service.ts, ingestion-service.ts,
+' audio-overview-service.ts (paths under apps/webapp/)
+!theme plain
+skinparam nodesep 25
+skinparam ranksep 40
+
+node "Next.js container (webapp)" {
+  component "chat route\nstreamText — streamed answer\nquota 429 gate before retrieval" as ChatRoute
+  component "chat-service\nprepareGrounding\nquery embedding + hybrid search" as ChatSvc
+  component "ingestion-service\nafter() job — parse, chunk,\nembed chunks in batches" as Ingest
+  component "audio-overview-service\nafter() job — script completion,\nthen synthesize()" as Audio
+}
+
+cloud "Scaleway Generative APIs\nOpenAI-compatible (D-4)\none shared key" as Scw {
+  component "chat model\nmistral-small-3.2-24b-instruct-2506\n(SCW_GENERATIVE_APIS_MODEL)" as ChatModel
+  component "embedding model\nqwen3-embedding-8b @ 2000 dims\n(SCW_GENERATIVE_APIS_EMBEDDING_MODEL)" as EmbModel
+}
+
+cloud "Azure AI Speech (D-8)\nswedencentral realtime endpoint\n(AZURE_SPEECH_KEY / _REGION)" as Azure
+
+database "Supabase" {
+  component "chunks: vector(2000) HNSW\n+ generated fts (GIN)" as Pgvector
+  component "artifacts bucket\n(mp3, signed URLs)" as Bucket
+}
+
+' Layout hints: stack the Scaleway models and pair the webapp components
+' into two columns so the diagram fits the docs column.
+ChatModel -[hidden]down- EmbModel
+ChatRoute -[hidden]down- Ingest
+ChatSvc -[hidden]down- Audio
+
+ChatRoute --> ChatModel : grounded / zero-source\nanswer (streamed)
+ChatRoute ..> ChatSvc
+ChatSvc --> EmbModel : query embedding\n(skipped at zero sources)
+ChatSvc --> Pgvector : hybrid search,\nRRF top-10
+Ingest --> EmbModel : chunk embeddings\n(embedMany)
+Ingest --> Pgvector : replaceChunks
+Audio --> ChatModel : script completion\n(generateText)
+Audio --> Azure : one SSML POST\n(TTS_PROVIDER = azure)
+Audio --> Bucket : upload mp3
+@enduml
