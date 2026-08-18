@@ -6,6 +6,10 @@
 > rewriting.
 > **Sources:** PR descriptions, `handovers/`, `product/roadmap.md`,
 > `product/security.md`.
+>
+> **Update (2026-08-18, session C8):** coverage extended through the full
+> merged board — the second wave and the foreman hand-off, in the catch-up
+> section at the end of this page.
 
 ## The setup (2026-08-17, PR [#1](https://github.com/DonHeidi/notebooklm-clone/pull/1))
 
@@ -183,3 +187,118 @@ itself is the evidence — C3 (legal pages before going public), C4–C6
 migration) were all added mid-flight at review boundaries, none of them in
 the original plan. The review gate is not overhead on the process; it is
 where the process steers.
+
+## Catch-up: the second wave and the foreman hand-off (appended 2026-08-18, session C8)
+
+Written by session C8 from the session handovers, the two foreman
+handovers (`handovers/2026-08-18-foreman-handover.md`,
+`…-foreman-2-handover.md`), and the PR record (#24–#50). By end of day 2
+the entire roadmap board was merged — S-0, A1–A7, B1–B5, C1–C7, D1–D2, 51
+PRs — and the product live on its own domain (`https://app.mrgnl.eu`).
+What follows is what the process record gained on the way there.
+
+### The second wave
+
+Day 2's second half landed the rest of the board: A4 (grounded chat), D2
+(audio overview), A5 (citation navigation + notes), A7 (the D-9 test
+migration), B3 (hosted demo environment), C5–C7 (architecture views,
+rationale + FAQ, scope status), B4 (custom domain), B5 (Supabase under
+Terraform), and A6 (demo polish) — with the foreman role itself handed
+over in between. The predicted-collision discipline held: A4 and A5 both
+declared their expected merge conflicts with D2 in their PRs before the
+conflicts existed (`bun.lock`, the workspace `page.tsx`), and both
+resolved per the standing protocol (Lane A wins; take main's lockfile and
+re-run the branch's `bun add`s).
+
+### Where it rubbed, round two
+
+- **A cross-lane lint break gated CI for half a wave.** After the #27–#29
+  merges, main's CI was red at the Lint step on two
+  `react-hooks/set-state-in-effect` findings in D2's studio components —
+  so A7's PR
+  [#33](https://github.com/DonHeidi/notebooklm-clone/pull/33) stopped at
+  Lint and its Test step (the whole point of that PR) never ran in CI; the
+  proof of D-9's exit-code contract had to be local full-suite runs. The
+  fix was a dedicated two-effect PR
+  ([#35](https://github.com/DonHeidi/notebooklm-clone/pull/35)) rather
+  than a drive-by from an unrelated lane — boundary discipline kept even
+  for a two-line fix. The instructive tail: A6's brief, written earlier,
+  still listed the lint fix as a requirement; A6 verified it was already
+  done and annotated the A7 handover instead of re-fixing. Briefs encode
+  the board state at writing time — correct-the-record applies to their
+  assumptions too.
+- **Deviate-and-flag worked as designed.** B5's brief said to manage
+  `supabase_settings` for what is configured today; the session concluded
+  that doing so would create a standing double-ownership fight with
+  `supabase config push` and deliberately did **not** instantiate the
+  resource — flagging the deviation from the brief's letter, with
+  reasoning, in the PR
+  ([#48](https://github.com/DonHeidi/notebooklm-clone/pull/48)) for
+  foreman review. The deviation was accepted. The pattern on record:
+  a worker may deviate from a brief's letter in service of its intent,
+  but only visibly, never silently.
+- **The foreman role needed its own handover.** The first foreman session
+  ended of context weight after ~20 sessions of coordination; its
+  handover (`handovers/2026-08-18-foreman-handover.md`) carries the live
+  board, open decisions, and twelve numbered items of operational craft —
+  and the successor (foreman-2) continued the numbering to sixteen. The
+  session-handover convention proved to apply to the coordinating role
+  exactly as to workers, including the advice to write the handover
+  *before* the context runs out.
+- **Verification tooling can lie green.** Foreman-2's craft items record
+  two traps found the hard way: `bunx varlock run` from a worktree
+  *subdirectory* silently no-ops with exit 0 (it prints "No .env files
+  found" and the wrapped command never runs — "a green verification can
+  be a verification that never happened"), and `supabase config push`
+  auto-confirms when it detects an agent, making every push an apply
+  (found in B3 when a piped "n" did not abort). Both are now standing
+  session-brief warnings.
+- **Adjacent-row edits do conflict.** A6 and B5 each touched one adjacent
+  row of `product/security.md`'s register table and merge-conflicted;
+  the resolution was mechanical (keep both rows) but the foreman-2
+  handover's rule is the keeper: verify the kept SEC-n lines afterwards
+  by content, not by count.
+- **Worktree hygiene stayed manual.** Worker sessions leave their
+  worktrees behind (found twice — craft items 7 and 16), and
+  `gh pr merge --delete-branch` fails while a worktree still holds the
+  branch. The foreman checks `git worktree list` after every merge batch.
+
+### Spike → decision → implementation, completed (D1 → D2)
+
+The D-lane closed the loop the spike process was designed for. D1's
+weighted-criteria spike decided D-8 (Azure AI Speech, region pinned);
+D2 implemented it and immediately hit reality — Azure had closed
+`westeurope` to new customers. The deviation was handled inside the
+decision's own frame: `swedencentral` was chosen because it preserves
+every property the original region was picked for (EU in-region
+processing, standard + HD German voices), and the correction was recorded
+against D-8 rather than re-opening it
+(PR [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)). The
+owner stayed at the decision points: auditioning five real voice
+generations mid-session and accepting standard-neural quality (no
+ElevenLabs escalation). The same flow then seeded the next decision:
+B5's recorded list of what the Supabase Terraform provider *cannot*
+manage is the standing input to the still-open question of
+Terraform-managing the Azure Speech resources
+(`handovers/2026-08-18-session-b5-supabase-terraform.md`).
+
+### The appending contract needed a batch session
+
+C4's handover set the contract that later sessions append to the history
+pages in the same PR that does the work "or the foreman batches it".
+Through ten further merged sessions, only A7 did (its D-9 annotations);
+the pages fell behind reality — `product/history/supabase.md` still said
+no hosted project existed while the product ran on one. C8 (roadmap row
+via PR [#51](https://github.com/DonHeidi/notebooklm-clone/pull/51)) is
+the foreman-dispatched batch. The honest reading for future boards:
+per-session appending loses to feature pressure unless the review
+checklist enforces it, and a scheduled catch-up session is the fallback
+that actually happens.
+
+### Where the process stands (2026-08-18, after the board)
+
+Every roadmap session is merged (51 PRs), the product is live, and ~4 days
+of buffer remain for day-7 demo prep. The conventions held under
+parallelism twice over; the second wave's new lessons are the ones above —
+green that isn't green, briefs that go stale, and record-keeping that
+needs enforcement, not intention.

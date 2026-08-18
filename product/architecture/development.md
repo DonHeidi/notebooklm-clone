@@ -7,6 +7,13 @@
 > **Extended 2026-08-18** (session C6): dependency overview with
 > per-dependency rationale added below.
 
+> **Update (2026-08-18, session C8):** refreshed in place for the merged
+> board — the test count (154 as of A6,
+> [PR #49](https://github.com/DonHeidi/notebooklm-clone/pull/49)), the
+> removal of the PGlite dev-dependency rows (A7 implemented D-9,
+> [PR #33](https://github.com/DonHeidi/notebooklm-clone/pull/33)), and the
+> two Terraform providers added by B4 and B5 in the infrastructure table.
+
 ## Monorepo layout
 
 Bun-managed workspaces (`apps/*`, `packages/*` — root `package.json`):
@@ -20,7 +27,8 @@ notebooklm-clone/
 ├── packages/            shared workspace packages (still empty)
 ├── supabase/            migrations (ONE timestamp-ordered timeline:
 │   │                    drizzle-generated + hand-written), config.toml
-├── infrastructure/      Terraform for Scaleway
+├── infrastructure/      Terraform for Scaleway + the hosted Supabase
+│   │                    project (import-only, B5)
 ├── product/             scope, feasibility, security, history, these views
 ├── handovers/           one note per working session
 └── .github/workflows/   ci.yml, deploy-webapp.yml, deploy-static-sites.yml
@@ -47,7 +55,9 @@ standing SEC-5 review item.
 ## Testing strategy
 
 - `bun test` from the repo root sweeps all workspaces (root `AGENTS.md`).
-  80 tests pass as of A4's merge.
+  154 tests pass as of A6's merge
+  ([PR #49](https://github.com/DonHeidi/notebooklm-clone/pull/49); the
+  count was 80 when this page was written at A4 — updated by C8).
 - Pure logic (chunking offsets, grounding/marker extraction, route access)
   is tested directly — the modules are deliberately framework-free.
 - Database-backed tests (repositories, ingestion pipeline, hybrid search)
@@ -122,11 +132,17 @@ section:
 | Dependency | Purpose | Why this one |
 | --- | --- | --- |
 | `drizzle-kit` | Migration generator | `generate`, **never `push`** (D-3: push drops the HNSW operator class) |
-| `@electric-sql/pglite`, `@electric-sql/pglite-pgvector` | In-process Postgres for DB-backed tests | A1's choice for cheap throwaway test databases; **being replaced by a real Postgres container per D-9** (session A7 in flight as this is written — whichever session reads this later should check D-9's status) |
 | `tailwindcss`, `@tailwindcss/postcss` | Tailwind v4 | create-next-app scaffold convention |
 | `typescript`, `@types/node`, `@types/react`, `@types/react-dom` | Types | Framework convention |
 | `@types/bun` | `bun test` globals | Follows from Bun as test runner (F-10) |
 | `eslint`, `eslint-config-next` | Lint | Next's own preset — convention |
+
+*(Corrected 2026-08-18, session C8: this table originally listed
+`@electric-sql/pglite` + `@electric-sql/pglite-pgvector` with a note that
+their D-9 replacement was in flight. Session A7
+([PR #33](https://github.com/DonHeidi/notebooklm-clone/pull/33)) removed
+both the same day — DB-backed tests run on a real Postgres now, see the
+testing strategy above and the rejected list below.)*
 
 ### Docs and marketing sites (`apps/docs`, `apps/marketing` — identical sets)
 
@@ -148,6 +164,8 @@ section:
 | Dependency | Purpose | Why this one |
 | --- | --- | --- |
 | `scaleway/scaleway` provider | All Scaleway resources | F-9: complete coverage of every resource this project needs, verified in the feasibility pass; platform choice itself is D-10 |
+| `hashicorp/archive` provider | Zips the apex-redirect function sources for upload | Added by B4 with the `mrgnl.eu` apex function ([PR #45](https://github.com/DonHeidi/notebooklm-clone/pull/45)) — the standard way to package a `scaleway_function` deployment |
+| `supabase/supabase` provider | The hosted Supabase project — lifecycle only, adopted by import | B5 ([PR #48](https://github.com/DonHeidi/notebooklm-clone/pull/48)): collapses environment lifecycle into the Terraform flow; the tool-ownership split (what stays with the Supabase CLI) is in `supabase/AGENTS.md` |
 | `backend "s3"` | Terraform state on Scaleway object storage | Scaleway is S3-compatible; four `skip_*` flags and a no-locking caveat documented in `versions.tf` (B2; see D-10's interchange map) |
 
 ### CI actions (`.github/workflows/`)
@@ -171,8 +189,11 @@ section:
   call (`handovers/2026-08-18-session-d2-audio-overview.md`).
 - **eve / LangChain-class agent frameworks** — D-6: AI SDK core covers
   Phase 1; revisit at Phase 5.
-- **PGlite** — see the dev-dependency table: replaced by D-9, not by
-  preference but by two reproduced Bun-runtime bugs.
+- **PGlite** — removed by D-9's implementation (session A7,
+  [PR #33](https://github.com/DonHeidi/notebooklm-clone/pull/33)): not by
+  preference but by two reproduced Bun-runtime bugs (exit 99 despite
+  passing tests; cold WASM init blowing CI hook timeouts). DB-backed tests
+  run on a real Postgres + pgvector instead.
 
 ## Conventions
 

@@ -7,6 +7,20 @@
 > [PR #24](https://github.com/DonHeidi/notebooklm-clone/pull/24) A4).
 > Sessions A5 (notes UI, citation navigation) and D2 (audio artifacts) are
 > in flight and will extend this model's *usage*, not its shape.
+>
+> **Correction (2026-08-18, session C8):** both merged the same day — and
+> D2 ([PR #27](https://github.com/DonHeidi/notebooklm-clone/pull/27)) *did*
+> extend the shape: the **artifacts** table plus
+> `artifact_type`/`artifact_status` enums now exist (generic artifact
+> foundation, scope §3; `audio_overview` the only type so far, a replayable
+> `config` jsonb, owner-chain RLS, and a private `artifacts` storage
+> bucket). A5 ([PR #29](https://github.com/DonHeidi/notebooklm-clone/pull/29))
+> put the notes table and citation offsets to work without schema changes,
+> and A6's quotas
+> ([PR #49](https://github.com/DonHeidi/notebooklm-clone/pull/49)) are
+> repository count queries — also no schema change. "Not yet in the schema"
+> below now reads: permissions only. Details in
+> `product/history/webapp.md`.
 
 ## The notebook aggregate
 
