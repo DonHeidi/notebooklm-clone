@@ -19,11 +19,11 @@ node "Scaleway fr-par" {
   }
 }
 
-node "Supabase — LOCAL stack today,\nhosted project pending B3" as Supabase {
+node "Supabase — hosted project (B3)\neu-west-3 · Terraform-managed\nsince B5 (import-only)" as Supabase {
   artifact "Auth (JWT / cookie sessions)\nPostgres + pgvector (HNSW, RLS)\nStorage (sources bucket, RLS)" as SbArt
 }
 
-cloud "Azure AI Speech\nwesteurope (D-8)\nPENDING — D2 in flight" as Azure
+cloud "Azure AI Speech\nwesteurope (D-8) · F0 tier\nTTS since D2" as Azure
 
 node "GitHub Actions\n(manual workflow_dispatch)" as CI
 
@@ -32,12 +32,12 @@ node "GitHub Actions\n(manual workflow_dispatch)" as CI
 Sites -[hidden]down- Tfstate
 Registry -[hidden]down- GenAPI
 
-User --> Container : HTTPS — SSE verified\nunbuffered (D-7 / S-1)
-User --> Sites : HTTPS
+User --> Container : HTTPS app.mrgnl.eu (B4)\nSSE verified unbuffered (D-7 / S-1)
+User --> Sites : HTTPS docs./www.mrgnl.eu\n(B4 Edge Services)
 User --> SbArt : direct file\nupload (D-5)
 Container --> Supabase : auth · pooled SQL ·\nstorage (service-role,\napp-gated)
 Container --> GenAPI : chat +\nembeddings
-Container ..> Azure : synthesize() —\npending D2
+Container --> Azure : synthesize() (D2)
 Registry ..> Container : image pull\n:sha-<12>
 CI --> Registry : deploy-webapp.yml\nbuild + push, PATCH rollout
 CI --> OS : deploy-static-sites.yml\ns3 sync

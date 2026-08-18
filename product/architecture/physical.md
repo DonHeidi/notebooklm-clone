@@ -34,7 +34,7 @@ in `product/feasibility.md`.
 
 ## Topology
 
-![UML deployment diagram: users reach the Scaleway serverless container (Next.js standalone on Node 24) and the object-storage website buckets over HTTPS, and upload files directly to Supabase Storage; the container talks to Supabase (auth, pooled SQL, storage), the Scaleway Generative APIs, and — pending D2 — Azure AI Speech; GitHub Actions pushes images to the registry and syncs the static-site buckets; the tfstate bucket is Terraform's S3 backend.](assets/physical-topology.svg)
+![UML deployment diagram: users reach the Scaleway serverless container (Next.js standalone on Node 24) and the object-storage website buckets over HTTPS, and upload files directly to Supabase Storage; the container talks to the hosted Supabase project (auth, pooled SQL, storage; Terraform-managed since B5), the Scaleway Generative APIs, and Azure AI Speech (TTS, D2); GitHub Actions pushes images to the registry and syncs the static-site buckets; the tfstate bucket is Terraform's S3 backend.](assets/physical-topology.svg)
 
 *Diagram source: `product/architecture/diagrams/physical-topology.puml`.*
 
