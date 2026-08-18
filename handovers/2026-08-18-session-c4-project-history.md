@@ -43,11 +43,18 @@ section in the docs app. Roadmap lane C, session C4.
 - **Ordering/labels for the six pages live in `nav.ts`**, not in
   frontmatter — the canonical files stay plain markdown like everything
   else in `product/`.
-- **Three brief-mentioned incidents were left out for lack of a record**:
-  a shadcn CLI flag change, a GitHub 503 window during merges, and "the B1
-  false start" appear in no PR, handover, product doc, or commit. Per the
-  accuracy rule (every claim traceable), the pages don't assert them; the
-  PR asks the foreman to supply the record if they should be added.
+- **Three brief-mentioned incidents were initially left out for lack of a
+  record**: a shadcn CLI flag change, a GitHub 503 window during merges,
+  and "the B1 false start" appeared in no PR, handover, product doc, or
+  commit — they lived only in the foreman session's history. Per the
+  accuracy rule the first draft omitted them; the foreman then supplied the
+  facts (owner-confirmed) during the PR #22 review exchange, and they are
+  now recorded — the false start and 503 window in `process.md`, the
+  shadcn flag change in `webapp.md` (it was session 01, not A2/A3), each
+  attributed to "foreman session record, recorded via PR #22". `process.md`
+  gained a "Correcting the record" section telling this story: the
+  traceability rule catching exactly the gap the history section exists to
+  close.
 
 ## Verified
 

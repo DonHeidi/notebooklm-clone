@@ -126,6 +126,19 @@
   verifying against the Next docs bundled in `node_modules` rather than
   memory; the auth refresh went into `src/proxy.ts` with the exported
   `proxy` function (PR [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10)).
+- **The shadcn CLI had changed its flags out from under memory.** During
+  the scaffold (session 01, PR [#1](https://github.com/DonHeidi/notebooklm-clone/pull/1)),
+  `bunx shadcn@latest init --yes --base-color neutral` failed with
+  `unknown option '--base-color'` — the current CLI had moved from
+  per-option flags to a preset system. Found by the immediate CLI error on
+  first invocation; resolved by inspecting `init --help` and switching to
+  `init --yes --defaults` (the base-nova preset, which carries
+  `baseColor: neutral` in the generated `components.json`). This is the
+  CLI-flag flavor of the repo's "never pin from memory" rule: generator
+  flags are verified against `--help` at run time, not recalled from
+  training data. (Source: foreman session record, recorded via PR
+  [#22](https://github.com/DonHeidi/notebooklm-clone/pull/22) — see
+  "Correcting the record" in `product/history/process.md`.)
 - **The scaffold's shadcn/ui is the Base UI flavor, not Radix.** Noted in
   A2: composition uses `render={...}` props, not radix-style `asChild` —
   components added later must follow that idiom

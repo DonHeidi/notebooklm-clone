@@ -110,6 +110,33 @@ predicted.
   static sites publicly reachable (PR [#12](https://github.com/DonHeidi/notebooklm-clone/pull/12))
   — an example of the roadmap being extended mid-flight, as its own status
   header invites.
+- **The B1 false start.** Two sessions opened with the B1 brief on
+  2026-08-17: the first, launched at ~16:21, ended after four API calls
+  (~$1 of usage) with no commits and no PR trace; a fresh session at ~16:26
+  with the identical brief did all the actual work and produced PR
+  [#11](https://github.com/DonHeidi/notebooklm-clone/pull/11). What ended
+  the first session is unrecorded — it predates the correct-the-record
+  convention. It was found only retroactively, in the foreman's
+  cross-session usage analysis on 2026-08-18; the aborted session was
+  invisible in the git/PR record. Resolution: relaunch with the identical
+  brief — nothing was lost because nothing had been produced. The process
+  lesson: session starts are cheap and disposable precisely because briefs
+  are self-contained and re-runnable. (Source: foreman session record,
+  recorded via PR [#22](https://github.com/DonHeidi/notebooklm-clone/pull/22)
+  — see "Correcting the record" below.)
+- **GitHub itself flaked mid-wave.** During the evening merges of PRs
+  [#9](https://github.com/DonHeidi/notebooklm-clone/pull/9)–[#11](https://github.com/DonHeidi/notebooklm-clone/pull/11)
+  on 2026-08-17, GitHub's API intermittently returned HTTP 503 ("No server
+  is currently available") — merges and PR reads failed mid-sequence.
+  Found by direct `gh` failures while the foreman was merging the reviewed
+  wave; absorbed by a background retry loop (re-attempt every ~15 s,
+  checking merge state each pass) that landed both blocked merges on the
+  fourth attempt, while B1's conflict resolution proceeded locally in
+  parallel — git itself was unaffected. The lesson: external-platform
+  flakiness is absorbed by making merge operations idempotent-and-retried,
+  not by waiting. Nothing in the repo record shows it happened — which is
+  precisely why this history page exists. (Source: foreman session record,
+  recorded via PR [#22](https://github.com/DonHeidi/notebooklm-clone/pull/22).)
 - **Third-party review automation throttled during the wave.** The
   CodeRabbit reviews on the day-1 merge wave repeatedly hit the plan's
   rate limit (visible in the PR comment threads of
@@ -117,6 +144,20 @@ predicted.
   [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10),
   [#13](https://github.com/DonHeidi/notebooklm-clone/pull/13)); the
   foreman's own review remained the effective gate.
+
+## Correcting the record
+
+Three incidents on this page and in `product/history/webapp.md` — the B1
+false start, the shadcn CLI flag change, and the GitHub 503 window — appear
+in no PR, handover, doc, or commit: they lived only in the foreman
+session's own history. C4's first draft omitted them under its
+every-claim-traceable rule; the facts were then supplied from the foreman
+session record and confirmed by the owner during the review exchange of PR
+[#22](https://github.com/DonHeidi/notebooklm-clone/pull/22), which is now
+their citable source. The gap the rule caught is itself the finding:
+session knowledge that never reaches the repo is invisible to every future
+reader, and this history section exists to close exactly that gap — this
+correction being its first proof.
 
 ## Where the process stands
 
