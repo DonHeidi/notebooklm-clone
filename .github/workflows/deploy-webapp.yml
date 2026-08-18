@@ -84,8 +84,8 @@ jobs:
             echo "[$i] status=$status"
             case "$status" in
               ready)
-                domain=$(jq -r '.domain_name' <<< "$body")
-                echo "WEBAPP_URL=https://$domain" >> "$GITHUB_ENV"
+                url=$(jq -r '.public_endpoint' <<< "$body")
+                echo "WEBAPP_URL=$url" >> "$GITHUB_ENV"
                 exit 0 ;;
               error) jq -r '.error_message' <<< "$body"; exit 1 ;;
             esac
