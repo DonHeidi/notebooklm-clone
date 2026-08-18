@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import type { CitationData } from "@/lib/chat";
+import { useNotebookBridge } from "@/components/notebook-bridge";
 import {
   Tooltip,
   TooltipContent,
@@ -25,16 +26,36 @@ function citationLocation(data: CitationData): string {
   return parts.join(", ");
 }
 
+// A citation whose chunk no longer resolves (source deleted — A1 cascade
+// design): keep the marker visible but inert, with the hint on hover.
+function RemovedChip({ ordinal }: { ordinal: number }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        aria-label={`Citation ${ordinal}: source removed`}
+        aria-disabled
+        className="mx-0.5 inline-flex size-4 shrink-0 -translate-y-px cursor-default items-center justify-center rounded-full bg-muted align-middle text-[10px] font-medium text-muted-foreground"
+      >
+        {ordinal}
+      </TooltipTrigger>
+      <TooltipContent>Source removed</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function CitationChip({ data }: { data: CitationData }) {
+  const bridge = useNotebookBridge();
+  if (bridge?.removedChunkIds.has(data.chunkId)) {
+    return <RemovedChip ordinal={data.ordinal} />;
+  }
   const location = citationLocation(data);
   return (
     <Tooltip>
       <TooltipTrigger
-        // chunkId travels on the chip so A5 can wire chip → viewer
-        // navigation without touching the renderer.
         data-chunk-id={data.chunkId}
         data-source-id={data.sourceId}
-        aria-label={`Citation ${data.ordinal}: ${data.sourceTitle}`}
+        aria-label={`Citation ${data.ordinal}: ${data.sourceTitle} — open the cited passage`}
+        onClick={() => bridge?.openCitation(data.chunkId)}
         className="mx-0.5 inline-flex size-4 shrink-0 -translate-y-px items-center justify-center rounded-full bg-primary/10 align-middle text-[10px] font-medium text-primary hover:bg-primary/20"
       >
         {data.ordinal}
@@ -47,11 +68,18 @@ function CitationChip({ data }: { data: CitationData }) {
   );
 }
 
+// How to render a [n] marker that has no citation data. In live chat that
+// happens mid-stream (data part not arrived yet) or for model-invented
+// markers — keep the literal text. In a saved note the markers were real
+// citations whose message or source is gone — show the inert removed chip.
+export type UnresolvedMarkerMode = "literal" | "removed";
+
 // Splits inline text into plain runs, **bold** runs, and [n] chips.
 function renderInline(
   text: string,
   citations: Map<number, CitationData>,
   keyPrefix: string,
+  unresolvedMarkers: UnresolvedMarkerMode,
 ): ReactNode[] {
   return text.split(/(\*\*[^*]+\*\*|\[\d{1,3}\])/g).map((token, index) => {
     const key = `${keyPrefix}-${index}`;
@@ -60,11 +88,13 @@ function renderInline(
     }
     const marker = token.match(/^\[(\d{1,3})\]$/);
     if (marker) {
-      const data = citations.get(Number(marker[1]));
-      // Markers without citation data (invented by the model, or the data
-      // part not arrived yet) stay as literal text.
-      return data ? (
-        <CitationChip key={key} data={data} />
+      const ordinal = Number(marker[1]);
+      const data = citations.get(ordinal);
+      if (data) {
+        return <CitationChip key={key} data={data} />;
+      }
+      return unresolvedMarkers === "removed" ? (
+        <RemovedChip key={key} ordinal={ordinal} />
       ) : (
         <span key={key}>{token}</span>
       );
@@ -79,9 +109,11 @@ const NUMBERED_LINE = /^\s*\d+[.)]\s+/;
 export function AssistantMarkdown({
   text,
   citations,
+  unresolvedMarkers = "literal",
 }: {
   text: string;
   citations: Map<number, CitationData>;
+  unresolvedMarkers?: UnresolvedMarkerMode;
 }) {
   const blocks = text
     .split(/\n{2,}/)
@@ -108,6 +140,7 @@ export function AssistantMarkdown({
                     line.replace(pattern, ""),
                     citations,
                     `${blockIndex}-${lineIndex}`,
+                    unresolvedMarkers,
                   )}
                 </li>
               ))}
@@ -116,7 +149,12 @@ export function AssistantMarkdown({
         }
         return (
           <p key={blockIndex}>
-            {renderInline(lines.join(" "), citations, `${blockIndex}`)}
+            {renderInline(
+              lines.join(" "),
+              citations,
+              `${blockIndex}`,
+              unresolvedMarkers,
+            )}
           </p>
         );
       })}

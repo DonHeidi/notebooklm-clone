@@ -146,19 +146,25 @@ export async function POST(
         }
       }
       writer.write({ type: "text-end", id: "answer" });
-      writer.write({ type: "finish" });
 
       // Persist what the user actually saw — full or stopped-early — so a
       // reload matches the transcript. Zero-source mode yields no citations
-      // (retrieved is empty, so no marker is valid).
+      // (retrieved is empty, so no marker is valid). Runs before `finish` so
+      // the DB message id still reaches the client as a data part — that id
+      // is what makes the message saveable as a note (CF-10).
       if (text.trim() !== "") {
-        await persistAssistantMessage(
+        const persisted = await persistAssistantMessage(
           conversation.id,
           user.id,
           text,
           buildCitationInputs(text, retrieved),
         );
+        writer.write({
+          type: "data-persisted",
+          data: { messageId: persisted.id },
+        });
       }
+      writer.write({ type: "finish" });
     },
   });
 

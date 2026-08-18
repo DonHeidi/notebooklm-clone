@@ -8,7 +8,10 @@ import {
   type SourceListItem,
 } from "@/app/notebooks/[id]/sources/actions";
 import { AddSourcesDialog } from "@/components/sources/add-sources-dialog";
-import { SourceViewer } from "@/components/sources/source-viewer";
+import {
+  SourceViewer,
+  type PassageHighlight,
+} from "@/components/sources/source-viewer";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -35,11 +38,20 @@ const TYPE_ICONS = {
 // polling window is short); see the session PR for the Realtime trade-off.
 const POLL_INTERVAL_MS = 2500;
 
+// External request to open the viewer at a cited passage (CF-07 chip
+// navigation). The token distinguishes repeat clicks on the same chip.
+export type ViewerOpenRequest = {
+  token: number;
+  sourceId: string;
+  highlight: PassageHighlight | null;
+};
+
 export function SourcesPanel({
   notebookId,
   userId,
   initialSources,
   selectedIds,
+  openRequest,
   onToggleSource,
   onSourcesUpdated,
 }: {
@@ -48,14 +60,31 @@ export function SourcesPanel({
   initialSources: SourceListItem[];
   /** Chat-grounding selection (CF-05): ready sources whose checkbox is on. */
   selectedIds: string[];
+  /** Citation-chip navigation: open the viewer at this passage. */
+  openRequest: ViewerOpenRequest | null;
   onToggleSource: (sourceId: string) => void;
   /** Fires after every list refresh so the workspace can reconcile the
    * selection (auto-select newly ready sources, drop deleted ones). */
   onSourcesUpdated: (sources: SourceListItem[]) => void;
 }) {
   const [sources, setSources] = useState(initialSources);
-  const [viewerSourceId, setViewerSourceId] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<{
+    sourceId: string;
+    highlight: PassageHighlight | null;
+  } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SourceListItem | null>(null);
+
+  // Chip clicks arrive as props from the workspace (the chat and notes
+  // panels live outside this subtree). Adopt each request exactly once by
+  // adjusting state during render, keyed on the token.
+  const [adoptedToken, setAdoptedToken] = useState<number | null>(null);
+  if (openRequest && openRequest.token !== adoptedToken) {
+    setAdoptedToken(openRequest.token);
+    setViewer({
+      sourceId: openRequest.sourceId,
+      highlight: openRequest.highlight,
+    });
+  }
 
   const refresh = useCallback(async () => {
     setSources(await listSourcesAction(notebookId));
@@ -82,8 +111,8 @@ export function SourcesPanel({
     }
     await deleteSourceAction(pendingDelete.id, notebookId);
     setPendingDelete(null);
-    if (viewerSourceId === pendingDelete.id) {
-      setViewerSourceId(null);
+    if (viewer?.sourceId === pendingDelete.id) {
+      setViewer(null);
     }
     await refresh();
   }
@@ -116,7 +145,7 @@ export function SourcesPanel({
               source={source}
               selected={selectedIds.includes(source.id)}
               onToggle={() => onToggleSource(source.id)}
-              onOpen={() => setViewerSourceId(source.id)}
+              onOpen={() => setViewer({ sourceId: source.id, highlight: null })}
               onDelete={() => setPendingDelete(source)}
             />
           ))}
@@ -124,8 +153,9 @@ export function SourcesPanel({
       )}
 
       <SourceViewer
-        sourceId={viewerSourceId}
-        onClose={() => setViewerSourceId(null)}
+        sourceId={viewer?.sourceId ?? null}
+        highlight={viewer?.highlight ?? null}
+        onClose={() => setViewer(null)}
         onDelete={(source) => setPendingDelete(source)}
       />
 

@@ -12,6 +12,7 @@ import {
   deleteSource,
   getSource,
   listSources,
+  resolveCitation,
   SourceInputError,
 } from "@/server/services/source-service";
 
@@ -118,6 +119,44 @@ export async function getSourceAction(
     return null;
   }
   return { ...toListItem(source), url: source.url, content: source.content };
+}
+
+// Where a cited passage lives (CF-07 navigation). Offsets come from the
+// server on every click — chips only carry the chunk id. Null means the
+// citation dangles (source deleted, foreign, or unknown) and the chip
+// degrades to its inert "source removed" state.
+export type CitationTarget = {
+  sourceId: string;
+  sourceTitle: string;
+  charStart: number;
+  charEnd: number;
+  pageNumber: number | null;
+  section: string | null;
+};
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function resolveCitationAction(
+  chunkId: string,
+): Promise<CitationTarget | null> {
+  const user = await requireUser();
+  // Non-UUID garbage would only die on the uuid cast in the query.
+  if (typeof chunkId !== "string" || !UUID_PATTERN.test(chunkId)) {
+    return null;
+  }
+  const location = await resolveCitation(chunkId, user.id);
+  if (!location) {
+    return null;
+  }
+  return {
+    sourceId: location.sourceId,
+    sourceTitle: location.sourceTitle,
+    charStart: location.charStart,
+    charEnd: location.charEnd,
+    pageNumber: location.pageNumber,
+    section: location.section,
+  };
 }
 
 export async function deleteSourceAction(

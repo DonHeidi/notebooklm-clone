@@ -9,6 +9,7 @@ import {
   createConversationRepository,
   type Conversation,
   type MessageWithCitationContext,
+  type MessageWithCitations,
   type NewCitationInput,
 } from "../repositories/conversation-repository";
 import {
@@ -104,15 +105,17 @@ export async function persistUserMessage(
   });
 }
 
+// Returns the stored row: the route emits its id as a data-persisted part so
+// the client can save the message as a note (CF-10) without a reload.
 export async function persistAssistantMessage(
   conversationId: string,
   ownerId: string,
   content: string,
   citations: NewCitationInput[],
   deps: ChatDeps = {},
-): Promise<void> {
+): Promise<MessageWithCitations> {
   const { conversations } = resolve(deps);
-  await conversations.appendMessage(
+  return conversations.appendMessage(
     conversationId,
     ownerId,
     { role: "assistant", content },
@@ -151,6 +154,12 @@ export function toUIMessages(
     role: message.role,
     parts: [
       { type: "text" as const, text: message.content },
+      // Rehydrated messages ARE persisted — same part the stream emits, so
+      // "Save to note" works identically live and after reload.
+      {
+        type: "data-persisted" as const,
+        data: { messageId: message.id },
+      },
       ...message.citations.map((citation) => ({
         type: "data-citation" as const,
         id: citation.id,

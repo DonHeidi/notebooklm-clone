@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import {
   getSourceAction,
   type SourceDetail,
 } from "@/app/notebooks/[id]/sources/actions";
+import { splitAtPassage } from "@/lib/passage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,14 +19,38 @@ import {
 
 const TYPE_LABELS = { file: "File", url: "Website", text: "Pasted text" } as const;
 
-// Read-only source viewer: extracted content, type, status/error, delete.
-// Navigating to a cited passage inside this view is session A5.
+// Where to highlight inside the source (CF-07 navigation): server-resolved
+// offsets into sources.content plus the human-readable location shown in
+// the header. Null = plain viewing, no highlight.
+export type PassageHighlight = {
+  charStart: number;
+  charEnd: number;
+  pageNumber: number | null;
+  section: string | null;
+};
+
+function highlightLocation(highlight: PassageHighlight): string {
+  const parts: string[] = [];
+  if (highlight.pageNumber !== null) {
+    parts.push(`Page ${highlight.pageNumber}`);
+  }
+  if (highlight.section) {
+    parts.push(highlight.section);
+  }
+  return parts.join(" · ");
+}
+
+// Source viewer: extracted content, type, status/error, delete — and, when
+// opened from a citation chip, the cited passage highlighted and scrolled
+// into view. Dialog-state only (A3's open point stands; no URL addressing).
 export function SourceViewer({
   sourceId,
+  highlight,
   onClose,
   onDelete,
 }: {
   sourceId: string | null;
+  highlight?: PassageHighlight | null;
   onClose: () => void;
   onDelete: (source: SourceDetail) => void;
 }) {
@@ -65,6 +90,24 @@ export function SourceViewer({
     return () => clearInterval(timer);
   }, [sourceId, processing]);
 
+  // The A3 invariant guarantees content.slice(charStart, charEnd) is exactly
+  // the chunk text; splitAtPassage only clamps against pathological input.
+  const segments =
+    source?.content && highlight
+      ? splitAtPassage(source.content, highlight.charStart, highlight.charEnd)
+      : null;
+
+  const markRef = useRef<HTMLElement>(null);
+  // Content arrives async, so key on when the passage becomes renderable.
+  const passageRendered = segments !== null;
+  useEffect(() => {
+    if (passageRendered) {
+      markRef.current?.scrollIntoView({ block: "center" });
+    }
+  }, [passageRendered, sourceId, highlight?.charStart, highlight?.charEnd]);
+
+  const location = highlight ? highlightLocation(highlight) : "";
+
   return (
     <Dialog open={sourceId !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-3xl">
@@ -84,6 +127,11 @@ export function SourceViewer({
               <DialogTitle className="pr-8">{source.title}</DialogTitle>
               <DialogDescription className="flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">{TYPE_LABELS[source.type]}</Badge>
+                {highlight && (
+                  <Badge variant="outline">
+                    Cited passage{location && ` — ${location}`}
+                  </Badge>
+                )}
                 {(source.status === "pending" || source.status === "processing") && (
                   <Badge variant="outline">
                     <Loader2 className="animate-spin" /> Processing
@@ -114,7 +162,21 @@ export function SourceViewer({
             <div className="min-h-0 flex-1 overflow-y-auto rounded-md border bg-muted/30 p-4">
               {source.content ? (
                 <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {source.content}
+                  {segments ? (
+                    <>
+                      {segments.before}
+                      <mark
+                        ref={markRef}
+                        data-testid="cited-passage"
+                        className="rounded-sm bg-amber-200/80 text-inherit dark:bg-amber-400/30"
+                      >
+                        {segments.passage}
+                      </mark>
+                      {segments.after}
+                    </>
+                  ) : (
+                    source.content
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
