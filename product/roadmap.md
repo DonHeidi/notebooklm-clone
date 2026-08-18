@@ -60,6 +60,7 @@ lanes need a shared `main`. **Blocks everything.**
 | B1 | `feat/spike-streaming` | Feasibility spike S-1: Node standalone Dockerfile, Terraform apply, deployed container, SSE verdict → **decides D-7** (serverless vs VM). Runs day 1 on purpose — highest risk lands first. | S-0 |
 | B2 | `feat/ci-deploy` | CI (lint, test, build), webapp deploy pipeline on the D-7 outcome, Terraform state → S3 backend, bucket deploy for static sites. | B1 |
 | B3 | `feat/demo-env` | Supabase Pro, demo-mode scaling (min-scale 1 or VM), Edge Services/custom domains only if time allows. | B2 |
+| B4 | `feat/custom-domain` | Custom domain `mrgnl.eu` (owner-registered at Scaleway): DNS zone in Terraform, Edge Services pipelines for docs/www (subdomain-only constraint), container domain for app.mrgnl.eu, apex redirect, Supabase auth URL updates. Added 2026-08-18. | B3; owner registers the domain first |
 
 ### Lane C — Static sites (parallel, fully independent)
 
