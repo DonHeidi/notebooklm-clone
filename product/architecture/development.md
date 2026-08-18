@@ -4,6 +4,8 @@
 > monorepo layout, the layer rule, testing, toolchain, and CI as merged.
 > The authoritative working rules live in the `AGENTS.md` files; this page
 > maps them, it does not replace them.
+> **Extended 2026-08-18** (session C6): dependency overview with
+> per-dependency rationale added below.
 
 ## Monorepo layout
 
@@ -71,6 +73,102 @@ standing SEC-5 review item.
 | **mise** | pins Bun, Terraform, Supabase CLI (`mise.toml`) | `mise exec -- <tool>` when not activated |
 | **varlock** | env schema (`.env.schema`, committed) | secrets only in Proton Pass → untracked `.env.local`; run env-dependent commands via `bunx varlock run --` |
 | **drizzle-kit** | generates SQL migrations into `supabase/migrations/` | `generate`, **never `push`** (D-3: push drops the HNSW operator class) |
+
+## Dependency overview
+
+*(Added 2026-08-18, session C6.)* Every dependency, what it is for, and why
+*this one* — citing the decision (D-n), feasibility verdict (F-n), or
+session PR where the choice is recorded. Two sourcing rules govern this
+section:
+
+- **No version numbers here.** They rot; `bun.lock` and `mise.toml` are the
+  authoritative version record, filled by `bun add` / mise at install time
+  (the root `AGENTS.md` never-pin rule).
+- **No invented rationale.** Where a choice was unremarkable — a framework's
+  own transitive convention, a generator's default — the table says so
+  plainly. Three library-level details (linkedom over jsdom, gpt-tokenizer's
+  pure-TS property, pdf-parse's rejection) come from the F-4 research pass
+  (2026-08-17), whose summary — not its detail — landed in this document's
+  feasibility study; they are restated here by C6 from that research and
+  marked "(F-4 pass)".
+
+### Webapp — runtime dependencies (`apps/webapp/package.json`)
+
+| Dependency | Purpose | Why this one |
+| --- | --- | --- |
+| `next` | The fullstack framework | A declared stack parameter, validated by F-1: everything Phase 1 needs works self-hosted in a container (D-1); no Vercel-only features (root `AGENTS.md` hard rule) |
+| `react`, `react-dom` | UI runtime | Next's own requirement — framework convention, not a choice |
+| `ai` (AI SDK 7 core) | `streamText` + tools + typed `data-*` parts for the chat/citation stream | Covers Phase 1's whole agentic surface without an agent framework — eve/LangChain explicitly rejected for Phase 1 (D-6) |
+| `@ai-sdk/react` | `useChat`, the client half of the AI SDK | Follows from choosing `ai` (A4, [PR #24](https://github.com/DonHeidi/notebooklm-clone/pull/24)) |
+| `@ai-sdk/openai-compatible` | Provider adapter for Scaleway Generative APIs (chat + embeddings) | The NF-16 thin abstraction (D-4): any OpenAI-compatible endpoint — OpenAI, Mistral, local Ollama — swaps in via config |
+| `@supabase/supabase-js` | Supabase API client (storage, auth base) | Comes with the Supabase platform choice (F-6) |
+| `@supabase/ssr` | Cookie-session auth in Next server code | Supabase's current official SSR auth package for Next (A2, [PR #10](https://github.com/DonHeidi/notebooklm-clone/pull/10)) |
+| `drizzle-orm` | Typed schema + queries; the repository layer's ORM | Generates SQL migrations into the single `supabase/migrations/` timeline (D-3 workflow; schema-ownership split in `product/history/supabase.md`) |
+| `postgres` (postgres-js) | The SQL driver under Drizzle | Created with `prepare: false` because `DATABASE_URL` is the transaction-mode pooler, which does not support prepared statements (`apps/webapp/AGENTS.md`, `src/server/db/index.ts`) |
+| `unpdf` | PDF text extraction | F-4's pick, Bun-verified: `extractText(pdf)` *without* `mergePages` yields per-page text, so every chunk carries an unambiguous `pageNumber` (A3, [PR #15](https://github.com/DonHeidi/notebooklm-clone/pull/15)) |
+| `@mozilla/readability` | Article extraction for URL sources | The reference readability implementation (F-4) |
+| `linkedom` | The DOM `Readability` runs on | Readability-compatible without jsdom's `node:vm` weight (F-4 pass) |
+| `@langchain/textsplitters` | `RecursiveCharacterTextSplitter` for chunking | The S-2 spike-plan choice, carried into A3; overlap + offsets behavior tested |
+| `gpt-tokenizer` | Token-count length function for the splitter | Pure TypeScript — no WASM to trip Bun (F-4 pass); ~400-token chunks measured in real tokens, not chars (A3) |
+| `shadcn`, `@base-ui/react` | shadcn/ui CLI and its primitive layer | Scaffold choice (session 01, [PR #1](https://github.com/DonHeidi/notebooklm-clone/pull/1)); the scaffold's shadcn flavor is **Base UI, not Radix** — components follow the `render={...}` idiom (A2 note in `product/history/webapp.md`) |
+| `class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css`, `lucide-react` | Styling/variant/icon companions | shadcn/ui's own standard kit, installed by its generator — convention, not individually chosen |
+
+### Webapp — dev dependencies
+
+| Dependency | Purpose | Why this one |
+| --- | --- | --- |
+| `drizzle-kit` | Migration generator | `generate`, **never `push`** (D-3: push drops the HNSW operator class) |
+| `@electric-sql/pglite`, `@electric-sql/pglite-pgvector` | In-process Postgres for DB-backed tests | A1's choice for cheap throwaway test databases; **being replaced by a real Postgres container per D-9** (session A7 in flight as this is written — whichever session reads this later should check D-9's status) |
+| `tailwindcss`, `@tailwindcss/postcss` | Tailwind v4 | create-next-app scaffold convention |
+| `typescript`, `@types/node`, `@types/react`, `@types/react-dom` | Types | Framework convention |
+| `@types/bun` | `bun test` globals | Follows from Bun as test runner (F-10) |
+| `eslint`, `eslint-config-next` | Lint | Next's own preset — convention |
+
+### Docs and marketing sites (`apps/docs`, `apps/marketing` — identical sets)
+
+| Dependency | Purpose | Why this one |
+| --- | --- | --- |
+| `astro` | Static site builder | A declared stack parameter, validated by F-8: purely static `dist/` for bucket websites; no SSR adapters allowed (the apps' `AGENTS.md`) |
+| `tailwindcss`, `@tailwindcss/vite` | Tailwind v4 via the Vite plugin | Same styling system as the webapp; Astro's documented Tailwind path |
+| `@fontsource-variable/newsreader`, `@fontsource-variable/public-sans`, `@fontsource/ibm-plex-mono` | Self-hosted fonts | Fonts ship in the bundle so pages make **zero external requests** — verified by grepping `dist/` in C2's review (`product/history/docs.md`); identity shared between the two sites by copying tokens, never cross-workspace imports |
+
+### Root tooling and out-of-tree pins
+
+| Tool | Purpose | Why this one |
+| --- | --- | --- |
+| `varlock` (root `package.json`) | Env schema: `.env.schema` committed, values resolved from Proton Pass | The never-commit-secrets rule made executable (root `AGENTS.md`; SEC-6) |
+| `bun`, `terraform`, `supabase` (`mise.toml`) | Package manager/test runner; infrastructure; local stack + migrations | Pinned in `mise.toml` because they sit *outside* the JS dependency tree — the one place exact versions are recorded by hand; CI installs from the same file (`ci.yml` header: single source of truth) |
+
+### Infrastructure (`infrastructure/versions.tf`)
+
+| Dependency | Purpose | Why this one |
+| --- | --- | --- |
+| `scaleway/scaleway` provider | All Scaleway resources | F-9: complete coverage of every resource this project needs, verified in the feasibility pass; platform choice itself is D-10 |
+| `backend "s3"` | Terraform state on Scaleway object storage | Scaleway is S3-compatible; four `skip_*` flags and a no-locking caveat documented in `versions.tf` (B2; see D-10's interchange map) |
+
+### CI actions (`.github/workflows/`)
+
+| Action | Purpose | Why this one |
+| --- | --- | --- |
+| `actions/checkout` | Checkout | Standard |
+| `jdx/mise-action` | Installs Bun/Terraform from `mise.toml` | Keeps CI on exactly the dev-pinned tool versions — one source of truth (`ci.yml` header) |
+
+### Explicitly rejected or deferred
+
+- **jsdom** — linkedom covers the Readability use without it (F-4 pass).
+- **pdf-parse** — open crash under Bun at the time of the F-4 pass; the
+  risk register also ranked `pdfjs-dist` (legacy build) and `pdf2json` as
+  fallbacks behind unpdf.
+- **mammoth** (DOCX) — consciously deferred in A3: not a trivial drop-in
+  (new dependency, binary fixtures, own failure modes); slots in later as
+  one more parser branch ([PR #15](https://github.com/DonHeidi/notebooklm-clone/pull/15)).
+- **Azure Speech SDK** — rejected in D2 for one plain-`fetch` SSML POST to
+  the realtime endpoint; the SDK would add a heavy dependency for a single
+  call (`handovers/2026-08-18-session-d2-audio-overview.md`).
+- **eve / LangChain-class agent frameworks** — D-6: AI SDK core covers
+  Phase 1; revisit at Phase 5.
+- **PGlite** — see the dev-dependency table: replaced by D-9, not by
+  preference but by two reproduced Bun-runtime bugs.
 
 ## Conventions
 
