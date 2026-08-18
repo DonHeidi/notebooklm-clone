@@ -55,6 +55,14 @@ inline citations → source navigation → notes.
   `<type>/<short-kebab-topic>`, where `<type>` is one of `feat`, `fix`,
   `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `style`, `chore`
   (e.g. `feat/notebook-upload`, `chore/setup-monorepo`).
+- **Correct the record, not just the code.** When later work disproves a
+  claim recorded anywhere agents read (AGENTS.md files, handovers, workflow
+  comments, product docs), the fix is incomplete until the claim is corrected
+  **in the same change**: update the authoritative AGENTS.md, and append a
+  dated, attributed correction blockquote to historical documents (handovers
+  stay chronological — annotate, never silently rewrite). A stale claim on
+  record sends future sessions down rabbit holes; treat it as a bug of the
+  same severity as the code it described.
 - **Commit messages** follow [Conventional Commits](https://www.conventionalcommits.org)
   with the same Angular types: `<type>(<optional scope>): <description>`,
   imperative mood, lowercase description, no trailing period. Scope is the
