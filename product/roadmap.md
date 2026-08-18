@@ -69,6 +69,7 @@ lanes need a shared `main`. **Blocks everything.**
 | C2 | `feat/docs-site` | Docs site seeded with existing product/architecture docs. | S-0 (deploys via B2) |
 | C3 | `feat/legal-pages` | Impressum (§5 DDG) + GDPR privacy page on both static sites (owner-provided data; sites are tracking-free, so the privacy statement is short), footer links. Added 2026-08-18 ahead of the sites going public via B2. | C1, C2 |
 | C4 | `feat/project-history` | Per-package project history as canonical markdown in `product/history/` (one file per workspace: decisions, results, problems + resolutions, sourced from PRs/handovers/feasibility), rendered as a History section in the docs app. Added 2026-08-18. | C2, all merged sessions as source material |
+| C5 | `feat/architecture-views` | 4+1 architectural view model (Kruchten) as canonical docs in `product/architecture/` (logical, process, development, physical views + scenarios), rendered by the docs app. Added 2026-08-18. | C2; describes state incl. A4 |
 
 ### Lane D — Differentiator (joins mid-week)
 
