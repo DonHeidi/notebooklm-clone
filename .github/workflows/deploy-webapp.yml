@@ -27,7 +27,7 @@ concurrency:
 
 env:
   REGISTRY: rg.fr-par.scw.cloud/marginalia
-  CONTAINERS_API: https://api.scaleway.com/containers/v1beta1/regions/fr-par
+  CONTAINERS_API: https://api.scaleway.com/containers/v1/regions/fr-par
   CONTAINER_NAME: marginalia-webapp
 
 jobs:
@@ -67,14 +67,12 @@ jobs:
 
           status=$(curl -sf "${auth[@]}" -X PATCH \
             -H "Content-Type: application/json" \
-            -d "{\"registry_image\": \"$REGISTRY/webapp:$IMAGE_TAG\"}" \
+            -d "{\"image\": \"$REGISTRY/webapp:$IMAGE_TAG\"}" \
             "$CONTAINERS_API/containers/$container_id" | jq -r '.status')
           echo "status after update: $status"
-          if [ "$status" != "pending" ]; then
-            # PATCH did not trigger a rollout on its own — deploy explicitly.
-            curl -sf "${auth[@]}" -X POST -H "Content-Type: application/json" \
-              -d '{}' "$CONTAINERS_API/containers/$container_id/deploy" > /dev/null
-          fi
+          # Updating the image does not roll out on its own — redeploy explicitly.
+          curl -sf "${auth[@]}" -X POST -H "Content-Type: application/json" \
+            -d '{}' "$CONTAINERS_API/containers/$container_id/redeploy" > /dev/null
 
       - name: Wait for rollout
         run: |
