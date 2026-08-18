@@ -54,6 +54,27 @@ app view (src/app/**/page.tsx)
 - `DATABASE_URL` is the pooled (transaction-mode) connection string, so the
   client is created with `prepare: false`.
 
+## Tests
+
+- `bun test` (Bun is the test runner; run from the repo root to sweep all
+  workspaces).
+- Database-backed tests (repositories, services) need a **real Postgres with
+  pgvector** reachable (feasibility D-9). Default: the Supabase local
+  stack's database — `mise exec -- supabase start` (requires Docker), the
+  same one-command setup local development already needs. Override with
+  `TEST_DATABASE_URL` (a superuser/CREATEDB connection string); CI points it
+  at a plain `pgvector/pgvector:pg17` service container.
+- `createTestDatabase()` (`src/server/db/create-test-database.ts`) gives
+  each test file its own throwaway `marginalia_test_*` database, migrated
+  with the real `supabase/migrations` timeline (including the hand-written
+  pgvector migration; RLS/storage migrations are Supabase-only and skipped —
+  authorization under test is the app-layer scoping). Leftover test
+  databases are swept at the start of the next run; they are safe to drop at
+  any time.
+- History: until 2026-08-18 these tests ran on PGlite (in-process WASM
+  Postgres), retired by D-9 after Bun-specific exit-99 and cold-init
+  failures (`product/feasibility.md`).
+
 ## UI
 
 - shadcn/ui components: add with `bunx shadcn@latest add <component>`
@@ -66,5 +87,6 @@ app view (src/app/**/page.tsx)
   features**; the app must work under `next start`/standalone in a container.
 - Env vars go through varlock (root `.env.schema`); never read secrets from
   anywhere else, never commit values.
-- Tests: `bun test`.
+- Tests: `bun test` (see **Tests** above — DB-backed tests need a running
+  Postgres).
 - Root conventions apply: see the repository root `AGENTS.md`.

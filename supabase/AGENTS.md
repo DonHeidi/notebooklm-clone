@@ -8,6 +8,12 @@ Initialized with the Supabase CLI (pinned via mise: `mise exec -- supabase`).
 - `mise exec -- supabase start` runs the full local stack (requires Docker).
 - Local defaults match the root `.env.schema` (API on `:54321`, Postgres on
   `:54322`).
+- The webapp's database-backed tests default to this stack's Postgres
+  (feasibility D-9, since 2026-08-18): `createTestDatabase()` creates
+  throwaway `marginalia_test_*` databases on `:54322` and applies the
+  migration timeline itself. They are swept on the next test run and safe
+  to drop; `supabase db reset` does not touch them. Override the server
+  with `TEST_DATABASE_URL` (CI uses a plain `pgvector/pgvector` container).
 
 ## Schema ownership (convention)
 

@@ -242,8 +242,8 @@ lives *inside* the adapter, not in the pipeline.
 
 ### D-9 — Database-backed tests run against real Postgres in a local container, replacing PGlite
 
-**Decided with the project owner, 2026-08-18. Not yet implemented — until it
-lands, the interim CI workarounds below stay in place.**
+**Decided with the project owner, 2026-08-18. Implemented 2026-08-18 by
+session A7 (`chore/test-postgres`): both interim CI workarounds are removed.**
 
 The webapp's repository and ingestion-pipeline tests currently run against
 PGlite (`@electric-sql/pglite`, in-process WASM Postgres, built in A1's
@@ -284,9 +284,21 @@ A-lane's surface): the choice between a plain `pgvector/pgvector` image and
 the already-pinned Supabase CLI stack (`supabase start`, whose Postgres ships
 pgvector and matches hosted Supabase closest) is left to that session — the
 repo already pins `supabase` in `mise.toml`, which weighs in favor of the
-Supabase stack. On completion, remove both CI workarounds
-(the exit-99 guard and the raised timeout) and delete this paragraph's
-"not yet implemented" marker.
+Supabase stack.
+
+> **Implementation note (2026-08-18, session A7).** The open choice above
+> was resolved as *both, each where it is strongest*: locally the tests
+> default to the Supabase stack's Postgres (`supabase start` is required for
+> app development anyway, so `bun test` needs zero additional setup); CI
+> provisions a plain `pgvector/pgvector:pg17` service container (~150 MB,
+> ready in seconds) instead of pulling the ~8 GB, 13-container Supabase
+> stack. The split is safe because `createTestDatabase()` creates a fresh
+> per-test-file database and applies the `supabase/migrations` timeline
+> itself on either server — same Postgres 17, same pgvector, same SQL.
+> Isolation is one throwaway database per test file (the moral equivalent of
+> PGlite's throwaway instances); leftovers are swept on the next run. Both
+> CI workarounds (the exit-99 allowlist and `--timeout 30000`) are removed
+> and the plain `bun test` exit-code contract is restored.
 
 ### D-10 — Scaleway as the platform, a deliberate deviation from the target company's AWS
 
@@ -367,7 +379,7 @@ observed in the real product (`product/ui-research.md` §4).
 | Supabase Queues (pgmq) GA label unconfirmed | Low | Launched 2024-12, dashboard-integrated; acceptable for prototype |
 | Generative-APIs model EOL rotation; org-level rate limits need payment method on file | Low | Loose model pinning behind D-4 abstraction; register payment method |
 | `bun test` lacks `--filter`/globs; `mock.module` scoping bugs | Low | Root `bun test` sweeps workspaces; avoid module-mock-heavy test design |
-| PGlite under Bun: exit 99 with 0 failures; cold WASM init blows the 5 s hook timeout on CI runners (found in B2) | Medium | **D-9 decided 2026-08-18**: move DB-backed tests to real Postgres in a local container. Interim: CI allowlists the exact exit-99 signature and runs `--timeout 30000` — both removed when D-9 lands |
+| PGlite under Bun: exit 99 with 0 failures; cold WASM init blows the 5 s hook timeout on CI runners (found in B2) | ~~Medium~~ **Resolved** | **D-9 implemented 2026-08-18 (session A7)**: DB-backed tests run on real Postgres + pgvector (local Supabase stack / CI service container); PGlite removed, both interim CI workarounds removed |
 | Local pgvector version may differ from hosted (0.8 features: iterative scans) | Low | Check `extversion` in S-2; avoid 0.8-only features initially |
 | Azure TTS (D-8) chosen on docs only — German/English voice quality never auditioned (no API key in spike D1) | Medium | First step of D2: create an F0 key, audition `de-DE-Seraphina/Florian/Katja` + en-US candidates before wiring the pipeline; runner-up ElevenLabs and self-host fallback stand ready behind the `TtsProvider` interface |
 | Azure DragonHD voices unavailable in Germany West Central (West Europe / Sweden Central only); voice catalog churns | Low | Standard neural voices suffice for MVP and exist in all three EU regions; pin `westeurope`; churn absorbed by the D-8 abstraction |
