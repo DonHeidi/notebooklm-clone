@@ -26,6 +26,16 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# Supabase publishable values (URL + anon key) are needed at build time —
+# `next build` inlines NEXT_PUBLIC_* into the client bundle. These are not
+# secrets (the anon key is a publishable key), passed as build args by the
+# deploy workflow.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 WORKDIR /app/apps/webapp
 # Invoke the next bin directly so the build runs on Node, not Bun (D-1).
 RUN ../../node_modules/.bin/next build
