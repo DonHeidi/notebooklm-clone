@@ -172,6 +172,13 @@ the "~€35/mo" recorded in `infrastructure/variables.tf` and the B3 handover.
 
 Signup is currently a **closed circle** (see SEC-10 in
 `product/security.md`) — 10 users is a hypothetical, not a forecast. The
+two scenarios sit on different stacks by necessity. **Scenario (b)
+(realistic) runs with no always-on system, on Supabase Free and Azure F0,
+at $0 in tier fees** — the free allowances cover its volumes. **Scenario
+(a) (ceiling) exceeds what the free tiers can carry** — beyond Azure F0's
+free character allowance and Supabase Free's storage cap you have to pay
+for the tiers that can serve the load (Azure S1, Supabase Pro), so the
+ceiling totals include those as required, not optional, costs. The
 model prices each user action from the constants in the merged code, then
 runs two scenarios. Fetched prices used (2026-08-18): Scaleway
 `mistral-small-3.2-24b-instruct-2506` **€0.15/M input, €0.35/M output**
@@ -227,7 +234,7 @@ ingestion/audio rates are assumptions, not measurements:
 | **Fixed (independent of usage within the scenario)** | | |
 | Edge Services | — | €4.99 |
 | Supabase Free / Azure F0 | — | $0 |
-| Always-warm container (optional) | — | + €34.8 if kept on (`min_scale=1`, derivation above); €0 at scale-to-zero |
+| Container | — | €0 — this scenario runs with no always-on system (scale-to-zero; an always-warm instance would add €34.8, derivation above) |
 | **Variable (scales with usage)** | | |
 | Chat completions (LLM) | 3,000 turns | ≈ €3.26 |
 | Query embeddings | 0.15M tokens | ≈ €0.02 |
@@ -235,7 +242,7 @@ ingestion/audio rates are assumptions, not measurements:
 | Audio scripts | 20 overviews | ≈ €0.03 |
 | TTS | 100,000 characters | **$0** on the current F0 tier (under its 500,000 free chars/month); would be ≈ $1.50 on S1 |
 | Container compute | ~15,000 vCPU-s | €0 (within the 200,000 vCPU-s monthly free tier) |
-| **Realistic total** | | fixed **€4.99** · variable **≈ €3.37** — i.e. **≈ €0.34 per user per month** → **≈ €8.4/mo** all-in (≈ €43/mo with the always-warm container on) |
+| **Realistic total** | | fixed **€4.99** · variable **≈ €3.37** — i.e. **≈ €0.34 per user per month** → **≈ €8.4/mo** all-in (an always-warm instance would raise it to ≈ €43/mo) |
 
 The punchline of scenario (b): at realistic 10-user usage, **the entire
 variable bill (≈ €3.4/mo, ≈ €0.34 per user) is smaller than the €4.99 Edge
