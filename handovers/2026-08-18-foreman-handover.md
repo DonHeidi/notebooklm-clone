@@ -104,3 +104,8 @@
 ~$300 total through day 2 across ~20 sessions; foreman ≈ 40%. Running
 infra: €4.99/mo Edge Services + ~€0 everything else (Free Supabase,
 min-scale 0, F0 Azure).
+
+> **Update (2026-08-18, foreman-2):** the open B5 decision above is resolved —
+> the owner chose to **adopt** the Supabase Terraform provider. Roadmap row B5
+> added in the same PR as this note; brief issued (import-only, zero-diff plan
+> gate, `prevent_destroy`). The D2 Azure-Speech analog remains undecided.
