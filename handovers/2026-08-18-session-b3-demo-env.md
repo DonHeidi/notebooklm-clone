@@ -141,5 +141,7 @@ click inside `page.evaluate`, not via element handles.
 - **Custom domains / Edge Services**: not touched (time-allowing item;
   needs its own cost approval). Default endpoints serve the demo.
 - Proton Pass: owner to store the new Supabase values (see above).
+  > **Done (2026-08-18, owner, recorded by foreman):** `SUPABASE_DB_PASSWORD`
+  > and the `TF_VAR_supabase_*` values are in the `marginalia` vault.
 - Before-demo checklist: restore/upgrade Supabase if paused; optionally
   `-var webapp_min_scale=1`.
