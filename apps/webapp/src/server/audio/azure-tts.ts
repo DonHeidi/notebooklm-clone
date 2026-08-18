@@ -47,10 +47,14 @@ export function buildSsml(voiceKey: string, script: string): string {
   );
 }
 
+// Minimal call signature so tests can inject a plain async function (Bun's
+// `typeof fetch` additionally demands `preconnect`).
+type FetchLike = (url: string | URL, init?: RequestInit) => Promise<Response>;
+
 export type AzureTtsConfig = {
   key?: string;
   region?: string;
-  fetchImpl?: typeof fetch;
+  fetchImpl?: FetchLike;
 };
 
 export function createAzureTts(config: AzureTtsConfig = {}): TtsProvider {

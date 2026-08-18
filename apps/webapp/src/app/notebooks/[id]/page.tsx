@@ -3,16 +3,20 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
+import { listArtifactsAction } from "@/app/notebooks/[id]/studio/actions";
 import { NotebookTitle } from "@/components/notebook-title";
 import { SourcesPanel } from "@/components/sources/sources-panel";
+import { StudioPanel } from "@/components/studio/studio-panel";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
+import { DEFAULT_VOICE, VOICE_OPTIONS } from "@/server/audio/voices";
 import { getNotebook } from "@/server/services/notebook-service";
 
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// The Chat / Studio panels are placeholders for sessions A4/A5/D2.
+// The Chat panel is a placeholder for session A4; notes join the Studio
+// output list in A5.
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -61,9 +65,17 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
         <WorkspacePanel title="Chat" className="flex-1">
           Grounded chat over your sources is coming in session A4.
         </WorkspacePanel>
-        <WorkspacePanel title="Studio" className="w-72 shrink-0">
-          Notes and generated artifacts will live here (sessions A5/D2).
-        </WorkspacePanel>
+        <section
+          aria-label="Studio"
+          className="flex w-72 shrink-0 flex-col rounded-xl border bg-card"
+        >
+          <h2 className="border-b px-4 py-2.5 text-sm font-medium">Studio</h2>
+          <StudioPanel
+            notebookId={notebook.id}
+            voices={{ options: VOICE_OPTIONS, defaults: DEFAULT_VOICE }}
+            initialArtifacts={await listArtifactsAction(notebook.id)}
+          />
+        </section>
       </div>
     </div>
   );
