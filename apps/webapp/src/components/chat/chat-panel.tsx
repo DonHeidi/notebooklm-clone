@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Loader2, SendHorizontal, Square, Trash2 } from "lucide-react";
+import { Check, Loader2, Pin, SendHorizontal, Square, Trash2 } from "lucide-react";
 import { clearChatAction } from "@/app/notebooks/[id]/chat/actions";
+import { saveMessageAsNoteAction } from "@/app/notebooks/[id]/notes/actions";
 import { AssistantMarkdown } from "@/components/chat/assistant-markdown";
+import { useNotebookBridge } from "@/components/notebook-bridge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +21,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { ChatUIMessage, CitationData } from "@/lib/chat";
+import {
+  persistedMessageId,
+  type ChatUIMessage,
+  type CitationData,
+} from "@/lib/chat";
 
 // Chat panel (ui-research §2.2): streamed grounded answers with inline
 // citation chips, the "N sources" counter as the visible CF-05 contract,
@@ -40,6 +46,58 @@ function messageText(message: ChatUIMessage): string {
     .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
     .map((part) => part.text)
     .join("");
+}
+
+// Assistant-message action row (ui-research §2.2): "Save to note" is the
+// CF-10 bridge. It appears once the message is persisted — the data-persisted
+// part carries the DB message id the note links to. A message stopped
+// mid-stream shows no action until reload (the id never reached the client).
+function AssistantActions({
+  notebookId,
+  message,
+}: {
+  notebookId: string;
+  message: ChatUIMessage;
+}) {
+  const bridge = useNotebookBridge();
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const messageId = persistedMessageId(message);
+  if (!messageId) {
+    return null;
+  }
+
+  async function handleSave() {
+    if (!messageId || state !== "idle") {
+      return;
+    }
+    setState("saving");
+    setError(null);
+    const result = await saveMessageAsNoteAction(notebookId, messageId);
+    if (result.error) {
+      setState("idle");
+      setError(result.error);
+      return;
+    }
+    setState("saved");
+    bridge?.notifyNotesChanged();
+  }
+
+  return (
+    <div className="mt-1 flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground"
+        disabled={state !== "idle"}
+        onClick={() => void handleSave()}
+      >
+        {state === "saved" ? <Check /> : <Pin />}
+        {state === "saved" ? "Saved to note" : "Save to note"}
+      </Button>
+      {error && <span className="text-xs text-destructive">{error}</span>}
+    </div>
+  );
 }
 
 export function ChatPanel({
@@ -117,6 +175,7 @@ export function ChatPanel({
                       text={messageText(message)}
                       citations={citationsByOrdinal(message)}
                     />
+                    <AssistantActions notebookId={notebookId} message={message} />
                   </div>
                 ),
               )}

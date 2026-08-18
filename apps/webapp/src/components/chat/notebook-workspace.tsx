@@ -1,15 +1,25 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { SourceListItem } from "@/app/notebooks/[id]/sources/actions";
+import { resolveCitationAction } from "@/app/notebooks/[id]/sources/actions";
 import { ChatPanel } from "@/components/chat/chat-panel";
-import { SourcesPanel } from "@/components/sources/sources-panel";
+import {
+  NotebookBridgeProvider,
+  type NotebookBridge,
+} from "@/components/notebook-bridge";
+import {
+  SourcesPanel,
+  type ViewerOpenRequest,
+} from "@/components/sources/sources-panel";
 import type { ChatUIMessage } from "@/lib/chat";
 
 // Client shell for the Sources + Chat columns: owns the source-selection
-// state (CF-05) that the Sources panel edits and every chat request carries.
-// Selection is client-side only; the server re-validates the ids. The Studio
-// column stays server-rendered and arrives as `children` (D2's area).
+// state (CF-05) that the Sources panel edits and every chat request carries,
+// plus the citation → passage navigation (CF-07) that chips anywhere in the
+// workspace trigger through the NotebookBridge context. Selection is
+// client-side only; the server re-validates the ids. The Studio column stays
+// server-rendered and arrives as `children` (D2's area + the notes section).
 
 export function NotebookWorkspace({
   notebookId,
@@ -58,8 +68,51 @@ export function NotebookWorkspace({
     );
   }, []);
 
+  // Citation → passage navigation (CF-07): resolve server-side (offsets are
+  // never trusted from the client), then hand the Sources panel an open
+  // request. A failed resolution marks the chunk removed — its chips turn
+  // inert instead of dead-clicking (A1's cascade design, degraded gracefully).
+  const [openRequest, setOpenRequest] = useState<ViewerOpenRequest | null>(null);
+  const [removedChunkIds, setRemovedChunkIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  const requestToken = useRef(0);
+  const openCitation = useCallback((chunkId: string) => {
+    void resolveCitationAction(chunkId).then((target) => {
+      if (!target) {
+        setRemovedChunkIds((previous) => new Set(previous).add(chunkId));
+        return;
+      }
+      requestToken.current += 1;
+      setOpenRequest({
+        token: requestToken.current,
+        sourceId: target.sourceId,
+        highlight: {
+          charStart: target.charStart,
+          charEnd: target.charEnd,
+          pageNumber: target.pageNumber,
+          section: target.section,
+        },
+      });
+    });
+  }, []);
+
+  // Save-to-note lives in the chat panel while the notes list lives in the
+  // server-rendered Studio children — the version counter tells the list to
+  // refresh.
+  const [notesVersion, setNotesVersion] = useState(0);
+  const notifyNotesChanged = useCallback(
+    () => setNotesVersion((version) => version + 1),
+    [],
+  );
+
+  const bridge = useMemo<NotebookBridge>(
+    () => ({ openCitation, removedChunkIds, notesVersion, notifyNotesChanged }),
+    [openCitation, removedChunkIds, notesVersion, notifyNotesChanged],
+  );
+
   return (
-    <>
+    <NotebookBridgeProvider value={bridge}>
       <section
         aria-label="Sources"
         className="flex w-80 shrink-0 flex-col rounded-xl border bg-card"
@@ -70,6 +123,7 @@ export function NotebookWorkspace({
           userId={userId}
           initialSources={initialSources}
           selectedIds={selectedIds}
+          openRequest={openRequest}
           onToggleSource={handleToggleSource}
           onSourcesUpdated={handleSourcesUpdated}
         />
@@ -86,6 +140,6 @@ export function NotebookWorkspace({
         />
       </section>
       {children}
-    </>
+    </NotebookBridgeProvider>
   );
 }

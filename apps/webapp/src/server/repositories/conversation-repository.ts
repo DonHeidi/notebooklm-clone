@@ -159,6 +159,56 @@ export function createConversationRepository(database: Database) {
       });
     },
 
+    // Save-as-note (CF-10) needs the persisted message a note points at.
+    // Owner scoping travels through the conversation → notebook join; a
+    // foreign or unknown id is simply not found.
+    async findMessageById(
+      messageId: string,
+      ownerId: string,
+    ): Promise<Message | undefined> {
+      const [row] = await database
+        .select({ message: messages })
+        .from(messages)
+        .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+        .innerJoin(notebooks, eq(notebooks.id, conversations.notebookId))
+        .where(and(eq(messages.id, messageId), eq(notebooks.ownerId, ownerId)))
+        .limit(1);
+      return row?.message;
+    },
+
+    // Citation context for ONE message — how a saved note rehydrates its
+    // chips (CF-10). Owner scoping is built into the join, and citations
+    // whose chunk cascaded away simply drop out, so a stranger and a
+    // fully-dangling message both read as "no citations", never an error.
+    async listCitationsForMessage(
+      messageId: string,
+      ownerId: string,
+    ): Promise<CitationWithContext[]> {
+      const rows = await database
+        .select({
+          citation: citations,
+          sourceId: chunks.sourceId,
+          sourceTitle: sources.title,
+          pageNumber: chunks.pageNumber,
+          section: chunks.section,
+        })
+        .from(citations)
+        .innerJoin(messages, eq(messages.id, citations.messageId))
+        .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+        .innerJoin(notebooks, eq(notebooks.id, conversations.notebookId))
+        .innerJoin(chunks, eq(chunks.id, citations.chunkId))
+        .innerJoin(sources, eq(sources.id, chunks.sourceId))
+        .where(and(eq(citations.messageId, messageId), eq(notebooks.ownerId, ownerId)))
+        .orderBy(asc(citations.ordinal));
+      return rows.map((row) => ({
+        ...row.citation,
+        sourceId: row.sourceId,
+        sourceTitle: row.sourceTitle,
+        pageNumber: row.pageNumber,
+        section: row.section,
+      }));
+    },
+
     async listMessages(
       conversationId: string,
       ownerId: string,

@@ -44,6 +44,19 @@ export type RetrievedChunk = {
   score: number;
 };
 
+// Where a cited chunk lives inside its source (CF-07 navigation): offsets
+// into sources.content plus the human-readable location. Resolved fresh on
+// every chip click — client-held offsets are never trusted.
+export type ChunkLocation = {
+  chunkId: string;
+  sourceId: string;
+  sourceTitle: string;
+  charStart: number;
+  charEnd: number;
+  pageNumber: number | null;
+  section: string | null;
+};
+
 export type HybridSearchParams = {
   notebookId: string;
   ownerId: string;
@@ -121,6 +134,31 @@ export function createSourceRepository(database: Database) {
       if (deleted.length === 0) {
         throw new NotFoundError("source not found");
       }
+    },
+
+    // Citation → passage resolution (CF-07). Undefined covers every degraded
+    // case alike — unknown id, cascaded-away chunk, foreign owner — so a
+    // dangling chip renders inert instead of erroring.
+    async findChunkLocation(
+      chunkId: string,
+      ownerId: string,
+    ): Promise<ChunkLocation | undefined> {
+      const [row] = await database
+        .select({
+          chunkId: chunks.id,
+          sourceId: chunks.sourceId,
+          sourceTitle: sources.title,
+          charStart: chunks.charStart,
+          charEnd: chunks.charEnd,
+          pageNumber: chunks.pageNumber,
+          section: chunks.section,
+        })
+        .from(chunks)
+        .innerJoin(sources, eq(sources.id, chunks.sourceId))
+        .innerJoin(notebooks, eq(notebooks.id, sources.notebookId))
+        .where(and(eq(chunks.id, chunkId), eq(notebooks.ownerId, ownerId)))
+        .limit(1);
+      return row;
     },
 
     // Hybrid retrieval (feasibility F-3): pgvector cosine over the HNSW index

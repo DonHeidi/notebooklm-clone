@@ -1,6 +1,7 @@
 import { getDb, type Database } from "../db";
 import {
   createSourceRepository,
+  type ChunkLocation,
   type Source,
 } from "../repositories/source-repository";
 import {
@@ -50,6 +51,19 @@ export async function getSource(
   database?: Database,
 ): Promise<Source | undefined> {
   return repository(database).findById(id, ownerId);
+}
+
+// Citation → passage resolution (CF-07): server-authoritative offsets for a
+// chip click. Null means the chunk no longer resolves for this owner —
+// deleted source, cascaded chunk, or someone else's citation — and the chip
+// degrades to its inert "source removed" state.
+export async function resolveCitation(
+  chunkId: string,
+  ownerId: string,
+  database?: Database,
+): Promise<ChunkLocation | null> {
+  const location = await repository(database).findChunkLocation(chunkId, ownerId);
+  return location ?? null;
 }
 
 export async function createTextSource(

@@ -114,6 +114,65 @@ describe("conversation repository", () => {
     );
   });
 
+  test("findMessageById is owner-scoped", async () => {
+    const repo = createConversationRepository(database);
+    const alice = owner();
+    const { notebook } = await setup(alice);
+    const conversation = await repo.create(alice, notebook.id);
+    const message = await repo.appendMessage(conversation.id, alice, {
+      role: "assistant",
+      content: "Worth saving",
+    });
+
+    const found = await repo.findMessageById(message.id, alice);
+    expect(found?.id).toBe(message.id);
+    expect(found?.content).toBe("Worth saving");
+    expect(found?.conversationId).toBe(conversation.id);
+
+    expect(await repo.findMessageById(message.id, owner())).toBeUndefined();
+    expect(await repo.findMessageById(crypto.randomUUID(), alice)).toBeUndefined();
+  });
+
+  test("listCitationsForMessage returns citation context, owner-scoped", async () => {
+    const repo = createConversationRepository(database);
+    const alice = owner();
+    const { notebook, source, chunk } = await setup(alice);
+    const conversation = await repo.create(alice, notebook.id);
+    const message = await repo.appendMessage(
+      conversation.id,
+      alice,
+      { role: "assistant", content: "Answer [1]." },
+      [{ chunkId: chunk.id, ordinal: 1, quote: "Some source text" }],
+    );
+
+    const cited = await repo.listCitationsForMessage(message.id, alice);
+    expect(cited).toHaveLength(1);
+    expect(cited[0].ordinal).toBe(1);
+    expect(cited[0].chunkId).toBe(chunk.id);
+    expect(cited[0].sourceId).toBe(source.id);
+    expect(cited[0].sourceTitle).toBe("Pasted");
+
+    // A stranger sees nothing rather than an existence signal.
+    expect(await repo.listCitationsForMessage(message.id, owner())).toHaveLength(0);
+  });
+
+  test("listCitationsForMessage drops citations whose source was deleted", async () => {
+    const repo = createConversationRepository(database);
+    const sourceRepo = createSourceRepository(database);
+    const alice = owner();
+    const { notebook, source, chunk } = await setup(alice);
+    const conversation = await repo.create(alice, notebook.id);
+    const message = await repo.appendMessage(
+      conversation.id,
+      alice,
+      { role: "assistant", content: "Answer [1]." },
+      [{ chunkId: chunk.id, ordinal: 1, quote: "Some source text" }],
+    );
+
+    await sourceRepo.delete(source.id, alice);
+    expect(await repo.listCitationsForMessage(message.id, alice)).toHaveLength(0);
+  });
+
   test("delete clears the conversation and cascades to messages and citations", async () => {
     const repo = createConversationRepository(database);
     const alice = owner();

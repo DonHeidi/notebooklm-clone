@@ -13,6 +13,7 @@ import {
   persistAssistantMessage,
   persistUserMessage,
   prepareGrounding,
+  toUIMessages,
 } from "./chat-service";
 
 const OWNER = "11111111-1111-4111-8111-111111111111";
@@ -152,6 +153,31 @@ describe("chat service", () => {
     expect(assistant.citations[0].ordinal).toBe(1);
     expect(assistant.citations[0].sourceTitle).toBe("Alpha paper");
     expect(assistant.citations[0].sourceId).toBe(sourceId);
+  });
+
+  test("persistAssistantMessage returns the stored row and toUIMessages carries its id", async () => {
+    const conversation = await getOrCreateConversation(notebookId, OWNER, { db });
+    const stored = await persistAssistantMessage(
+      conversation.id,
+      OWNER,
+      "A saveable answer.",
+      [],
+      { db },
+    );
+    expect(stored.id).toBeString();
+    expect(stored.content).toBe("A saveable answer.");
+
+    // Save-to-note (CF-10) keys off the DB message id in both directions:
+    // the stream emits it as a data-persisted part, and rehydration must
+    // produce the identical part so live and reloaded messages behave alike.
+    const loaded = await loadConversation(notebookId, OWNER, { db });
+    const ui = toUIMessages(loaded!.messages);
+    const last = ui.at(-1)!;
+    const persisted = last.parts.find((part) => part.type === "data-persisted");
+    expect(persisted).toBeDefined();
+    expect(
+      persisted && "data" in persisted ? persisted.data : undefined,
+    ).toEqual({ messageId: stored.id });
   });
 
   test("clearConversation removes history; next exchange starts fresh", async () => {

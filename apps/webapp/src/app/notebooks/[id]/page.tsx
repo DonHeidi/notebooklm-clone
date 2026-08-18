@@ -6,6 +6,7 @@ import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
 import { listArtifactsAction } from "@/app/notebooks/[id]/studio/actions";
 import { NotebookTitle } from "@/components/notebook-title";
 import { NotebookWorkspace } from "@/components/chat/notebook-workspace";
+import { NotesSection } from "@/components/notes/notes-section";
 import { StudioPanel } from "@/components/studio/studio-panel";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
@@ -16,8 +17,8 @@ import { getNotebook } from "@/server/services/notebook-service";
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// Sources + Chat are live (A3/A4); Studio hosts generated artifacts (D2);
-// notes join the Studio column in A5.
+// Sources + Chat are live (A3/A4); the Studio column hosts generated
+// artifacts (D2) above the notes section (A5).
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -73,6 +74,7 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
               voices={{ options: VOICE_OPTIONS, defaults: DEFAULT_VOICE }}
               initialArtifacts={await listArtifactsAction(notebook.id)}
             />
+            <NotesSection notebookId={notebook.id} />
           </section>
         </NotebookWorkspace>
       </div>

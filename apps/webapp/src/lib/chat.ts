@@ -14,4 +14,24 @@ export type CitationData = {
   section: string | null;
 };
 
-export type ChatUIMessage = UIMessage<unknown, { citation: CitationData }>;
+// Emitted once the assistant message is persisted (stream: after onFinish
+// writes the row; reload: rebuilt in toUIMessages). Carries the DB message
+// id "Save to note" (CF-10) needs — the client-side UIMessage id is not the
+// persisted id during a live stream.
+export type PersistedData = {
+  messageId: string;
+};
+
+export type ChatUIMessage = UIMessage<
+  unknown,
+  { citation: CitationData; persisted: PersistedData }
+>;
+
+export function persistedMessageId(message: ChatUIMessage): string | null {
+  for (const part of message.parts) {
+    if (part.type === "data-persisted") {
+      return part.data.messageId;
+    }
+  }
+  return null;
+}
