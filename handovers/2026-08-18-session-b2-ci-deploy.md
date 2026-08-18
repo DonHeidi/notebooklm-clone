@@ -76,11 +76,18 @@ the build args commit is required).
    checks `$?` by hand. CI accepts exactly the `exit 99 && "0 fail"`
    signature and fails everything else. Worth an upstream report; A-lane
    should know it exists.
+   > **Annotation (2026-08-18, owner decision, D-9):** to be removed at the
+   > root rather than worked around — DB-backed tests will move from PGlite
+   > to a real Postgres in a local container. The CI guard here is interim;
+   > see `product/feasibility.md` D-9.
 2. **PGlite cold init can blow bun's 5 s hook timeout on CI runners** — the
    first `new PGlite()` (WASM compile) intermittently took >5 s on a GitHub
    runner, failing a repository test file's `beforeAll` as `(fail) (unnamed)`.
    CI runs `bun test --timeout 30000`; A-lane may want the same locally on
    slow machines.
+   > **Annotation (2026-08-18, owner decision, D-9):** same root cause and
+   > same resolution — superseded by the move to a real Postgres container;
+   > the raised timeout is interim. See `product/feasibility.md` D-9.
 3. **Containers API is `containers/v1` now** (not v1beta1): field is `image`
    (`registry_image` is gone, matching the provider deprecations B1 hit) and
    a PATCH does **not** roll out on its own — POST `/redeploy` is required.
