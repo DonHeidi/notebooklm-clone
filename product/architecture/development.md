@@ -49,19 +49,23 @@ standing SEC-5 review item.
 - Pure logic (chunking offsets, grounding/marker extraction, route access)
   is tested directly — the modules are deliberately framework-free.
 - Database-backed tests (repositories, ingestion pipeline, hybrid search)
-  run against **PGlite** with pgvector
-  (`src/server/db/create-test-database.ts`): the *actual* migration
-  timeline from `supabase/migrations/` is applied via drizzle's journal, so
-  tests also validate the generated SQL. Supabase-only migrations (RLS,
-  extension placement) are intentionally not applied — authorization under
-  test is the app-layer scoping. I/O boundaries (embedder, file loader,
-  HTML fetcher) are injectable fakes; no test touches the network.
-- **Pending migration — D-9** (`product/feasibility.md`, decided
-  2026-08-18, [PR #23](https://github.com/DonHeidi/notebooklm-clone/pull/23),
-  not yet implemented): DB-backed tests move to a real Postgres container,
-  because PGlite under Bun exits 99 despite passing tests and its cold WASM
-  init blows CI hook timeouts. Until it lands, `ci.yml` carries two interim
-  workarounds (below).
+  run against a **real Postgres with pgvector**
+  (`src/server/db/create-test-database.ts`, D-9): each test file gets its
+  own throwaway database — locally on the Supabase stack's Postgres
+  (`supabase start`, no extra setup), in CI on a `pgvector/pgvector:pg17`
+  service container, overridable via `TEST_DATABASE_URL`. The *actual*
+  migration timeline from `supabase/migrations/` is applied (the
+  hand-written pgvector migration plus drizzle's journal), so tests also
+  validate the generated SQL. Supabase-only migrations (RLS, storage
+  buckets) are intentionally not applied — authorization under test is the
+  app-layer scoping. I/O boundaries (embedder, file loader, HTML fetcher)
+  are injectable fakes; no test touches the network.
+- **D-9 history** (`product/feasibility.md`, decided 2026-08-18 in
+  [PR #23](https://github.com/DonHeidi/notebooklm-clone/pull/23),
+  implemented the same day by session A7): these tests originally ran on
+  PGlite (in-process WASM Postgres), but PGlite under Bun exits 99 despite
+  passing tests and its cold WASM init blew CI hook timeouts; `ci.yml`
+  carried two interim workarounds until A7 removed them.
 
 ## Toolchain
 
@@ -91,14 +95,15 @@ Runs on every PR and push to `main`, two parallel jobs
 
 ```
 checks:    lint (webapp) → typecheck (next typegen + tsc) →
-           bun test --timeout 30000 → build all apps
+           bun test → build all apps
+           (postgres service container: pgvector/pgvector:pg17)
 terraform: terraform fmt -check → terraform validate (-backend=false,
            no credentials)
 ```
 
 The webapp build gets obviously-fake `NEXT_PUBLIC_SUPABASE_*` placeholders —
-CI only proves compilation, artifacts are discarded. The test step accepts
-exactly one non-zero signature: exit 99 with a `0 fail` summary (the
-PGlite-under-Bun quirk); any other failure fails the job. Both the exit-99
-allowlist and the raised timeout are marked interim and disappear when D-9
-lands.
+CI only proves compilation, artifacts are discarded. The test step uses the
+plain `bun test` exit-code contract (exit code = failure count). It briefly
+did not: while DB-backed tests ran on PGlite, CI allowlisted the
+exit-99-with-`0 fail` signature and raised the hook timeout — both interim
+workarounds were removed when D-9 landed (session A7, 2026-08-18).
