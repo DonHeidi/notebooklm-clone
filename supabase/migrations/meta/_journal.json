@@ -8,6 +8,13 @@
       "when": 1786984234831,
       "tag": "20260817163034_domain_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787049861115,
+      "tag": "20260818104421_artifacts",
+      "breakpoints": true
     }
   ]
 }
