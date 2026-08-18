@@ -44,13 +44,23 @@ export function AudioOverviewDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset the source list when the dialog opens — render-time adjustment
+  // (the React "adjusting state when a prop changes" pattern) instead of a
+  // sync setState inside the effect, which the hooks lint forbids.
+  const [lastOpen, setLastOpen] = useState(open);
+  if (open !== lastOpen) {
+    setLastOpen(open);
+    if (open) {
+      setSources(null);
+    }
+  }
+
   // Load the notebook's sources when the dialog opens; ready ones start
   // selected — "overview of everything" is the common case.
   useEffect(() => {
     if (!open) {
       return;
     }
-    setSources(null);
     void listSourcesAction(notebookId).then((items) => {
       setSources(items);
       setSelected(
