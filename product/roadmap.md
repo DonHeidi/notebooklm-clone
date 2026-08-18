@@ -50,7 +50,8 @@ lanes need a shared `main`. **Blocks everything.**
 | A3 | `feat/ingestion` | Upload (TUS → Supabase Storage) + pasted text + URL sources; parse→chunk→embed **in-process** (feasibility D-2 stage 1); sources panel with Realtime status; basic source viewer. Formats: PDF, TXT/MD, URL (DOCX only if mammoth drops in trivially). | A1 (A2 for RLS wiring) |
 | A4 | `feat/grounded-chat` | Hybrid-search retrieval (RRF), streaming chat (AI SDK, SSE), source-selection checkboxes + "N sources" counter, citations as streamed data parts, zero-source disclosure mode (ui-research §4). | A3 |
 | A5 | `feat/citations-notes` | Citation chips → source viewer navigates to the cited passage (CF-07 interaction); save-response-as-note with citations preserved; note editor. | A4 |
-| A6 | `feat/demo-polish` | Empty states, error handling, simple per-user quotas (NF-15 minimum), seeded demo notebook. | A5 |
+| A7 | `chore/test-postgres` | Implement feasibility **D-9**: migrate DB-backed tests from PGlite to a real Postgres (pgvector) container; remove the two INTERIM CI workarounds marked in `ci.yml` (exit-99 tolerance, extended hook timeout). Added 2026-08-18; scheduled after A5, **before A6** so the test infra settles before the polish pass. | A5 (D-9 decision) |
+| A6 | `feat/demo-polish` | Empty states, error handling, simple per-user quotas (NF-15 minimum), seeded demo notebook. | A5, A7 |
 
 ### Lane B — Platform (parallel)
 
