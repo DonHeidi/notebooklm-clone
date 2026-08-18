@@ -11,6 +11,11 @@ terraform {
       source  = "hashicorp/archive"
       version = "~> 2.8"
     }
+    # Hosted Supabase project lifecycle (supabase.tf, adopted by import in B5).
+    supabase = {
+      source  = "supabase/supabase"
+      version = "~> 1.10"
+    }
   }
 
   # Remote state on Scaleway Object Storage (migrated in session B2; the

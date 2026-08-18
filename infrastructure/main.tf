@@ -78,18 +78,24 @@ resource "scaleway_container" "webapp" {
   # NEXT_PUBLIC_* are inlined into the client bundle at image build time (see
   # deploy-webapp.yml build args); they are also set here for server-side
   # reads. Both are publishable values (SEC-6): access is enforced by RLS,
-  # not by hiding the anon key.
+  # not by hiding the anon key. Since B5 the Supabase URL + keys come from
+  # the imported project / apikeys data source (supabase.tf) instead of
+  # hand-copied TF_VARs.
   environment_variables = {
-    SCW_GENERATIVE_APIS_BASE_URL  = "https://api.scaleway.ai/${var.scw_project_id}/v1"
-    NEXT_PUBLIC_SUPABASE_URL      = var.supabase_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY = var.supabase_anon_key
+    SCW_GENERATIVE_APIS_BASE_URL = "https://api.scaleway.ai/${var.scw_project_id}/v1"
+    NEXT_PUBLIC_SUPABASE_URL     = local.supabase_url
+    # nonsensitive(): the provider marks all API keys sensitive, but the anon
+    # key is public by design and already inlined in the client bundle;
+    # keeping the mark off also keeps this a plan-level no-op (a sensitivity
+    # change alone plans a same-value container update).
+    NEXT_PUBLIC_SUPABASE_ANON_KEY = nonsensitive(data.supabase_apikeys.marginalia.anon_key)
     AZURE_SPEECH_REGION           = var.azure_speech_region
     TTS_PROVIDER                  = var.tts_provider
   }
 
   secret_environment_variables = {
     SCW_GENERATIVE_APIS_KEY   = var.generative_apis_key
-    SUPABASE_SERVICE_ROLE_KEY = var.supabase_service_role_key
+    SUPABASE_SERVICE_ROLE_KEY = data.supabase_apikeys.marginalia.service_role_key
     DATABASE_URL              = var.database_url
     AZURE_SPEECH_KEY          = var.azure_speech_key
   }
