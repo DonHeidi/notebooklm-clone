@@ -419,9 +419,13 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 project_id = "ahphkkvsofqmxkqzbica"
 
 [remotes.demo.auth]
-# Public URL of the deployed webapp container (Scaleway, fr-par).
-site_url = "https://marginalia6bb21b06-marginalia-webapp.functions.fnc.fr-par.scw.cloud"
-additional_redirect_urls = ["https://marginalia6bb21b06-marginalia-webapp.functions.fnc.fr-par.scw.cloud"]
+# Canonical webapp URL (custom domain, B4); the original container endpoint
+# stays on the allow-list so both origins keep working.
+site_url = "https://app.mrgnl.eu"
+additional_redirect_urls = [
+  "https://app.mrgnl.eu",
+  "https://marginalia6bb21b06-marginalia-webapp.functions.fnc.fr-par.scw.cloud",
+]
 
 [remotes.demo.auth.email]
 # Keep hosted's stricter defaults for flows the demo does not use

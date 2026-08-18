@@ -7,6 +7,7 @@ import { canonicalLinks } from './src/canonical-links.mjs';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://docs.mrgnl.eu',
   // English alias for the bilingual privacy page.
   redirects: {
     '/privacy': '/datenschutz/'

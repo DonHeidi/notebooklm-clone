@@ -16,6 +16,12 @@ variable "project_name" {
   default     = "marginalia"
 }
 
+variable "domain" {
+  type        = string
+  description = "Registered domain (Scaleway Domains) for the product's public hosts"
+  default     = "mrgnl.eu"
+}
+
 variable "webapp_image_tag" {
   type        = string
   description = "Tag of the webapp image in the registry namespace"

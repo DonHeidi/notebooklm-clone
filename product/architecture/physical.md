@@ -74,6 +74,9 @@ to `/login` (the auth proxy is part of the deploy contract).
 `aws s3 sync --delete --acl public-read` to the website buckets. Sites are
 served from the default bucket-website endpoints (HTTPS included); Edge
 Services / custom domains are B3.
+> **Update (2026-08-18, session B4):** custom domains are live — see
+> *Custom domain (B4)* below. Bucket-website default endpoints remain
+> serving as fallbacks.
 
 ## Secrets flow
 
@@ -107,3 +110,23 @@ endpoint). The container now receives `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`,
 `prepare: false`), `AZURE_SPEECH_KEY`, `SCW_GENERATIVE_APIS_KEY` as secret
 env, all via Terraform; `min_scale` is the `webapp_min_scale` tfvar
 (0 idle / 1 for demo windows).
+
+## Custom domain (B4, 2026-08-18)
+
+The product lives on `mrgnl.eu` (registered through Scaleway Domains; the
+root zone is native to the account, records in `infrastructure/domain.tf`):
+
+- **app.mrgnl.eu** → webapp container, via the *native* container custom
+  domain (CNAME + platform-issued Let's Encrypt cert, HTTP-01) — no Edge
+  Services pipeline needed.
+- **docs.mrgnl.eu / www.mrgnl.eu** → Edge Services pipelines (Starter plan,
+  €0.99 + €4/mo for the second pipeline) with bucket-website backends and
+  managed Let's Encrypt certificates. The docs/www CNAMEs are the one
+  exception to DNS-in-Terraform: Edge Services creates and owns them
+  (verified at apply).
+- **mrgnl.eu** (apex) → 301 to `https://www.mrgnl.eu` via a minimal
+  serverless function bound to the apex (ALIAS + auto-issued cert), because
+  Edge Services is subdomain-only (verified against its docs, 2026-08-18).
+- Supabase auth `site_url` is `https://app.mrgnl.eu`; the original
+  container endpoint stays on the redirect allow-list, and all previous
+  default endpoints keep serving.
