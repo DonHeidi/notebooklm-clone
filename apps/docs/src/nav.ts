@@ -111,6 +111,11 @@ export const architecturePages: { id: string; label: string; text: string }[] = 
     label: "Scenarios",
     text: "The +1: four use cases traced through the other views, each backed by a recorded end-to-end verification run.",
   },
+  {
+    id: "generative",
+    label: "Generative view",
+    text: "Extension of the 4+1 set: every AI model call — which model, where, triggered by what, bounded by which guard — and the RAG pipeline end to end.",
+  },
 ];
 
 export async function getNavGroups(): Promise<NavGroup[]> {
