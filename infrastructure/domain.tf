@@ -87,17 +87,12 @@ resource "scaleway_edge_services_head_stage" "site" {
   head_stage_id = scaleway_edge_services_dns_stage.site[each.key].id
 }
 
-# CNAMEs from the custom hosts to each pipeline's default endpoint. If Edge
-# Services auto-creates these records in the Scaleway-managed zone at fqdn
-# attach time, import them into these addresses instead of duplicating.
-resource "scaleway_domain_record" "site" {
-  for_each = local.edge_sites
-  dns_zone = var.domain
-  name     = each.key == "www" ? "www" : "docs"
-  type     = "CNAME"
-  data     = format("%s.", scaleway_edge_services_dns_stage.site[each.key].default_fqdn)
-  ttl      = 3600
-}
+# NOTE (verified at apply, 2026-08-18): the docs/www CNAMEs are the one
+# exception to records-in-code. When the fqdn's zone is Scaleway-managed,
+# Edge Services creates and OWNS the CNAME to its pipeline endpoint itself
+# (TTL 60, target <pipeline>.svc.edge.scw.cloud) — Terraform-managing a
+# duplicate fails (CNAME uniqueness) and would fight the platform's
+# self-management. Deleting a dns_stage removes its record again.
 
 # --- Apex: mrgnl.eu -> 301 https://www.mrgnl.eu -------------------------------
 # Edge Services cannot serve the apex; a minimal serverless function can
