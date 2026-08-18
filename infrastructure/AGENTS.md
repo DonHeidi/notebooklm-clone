@@ -1,6 +1,7 @@
 # infrastructure — agent guide
 
-Terraform for Scaleway. Provider: `scaleway/scaleway` (version constraint in
+Terraform for Scaleway plus the hosted Supabase project. Providers:
+`scaleway/scaleway` and `supabase/supabase` (version constraints in
 `versions.tf` — when bumping, check the registry for the latest, don't guess).
 
 ## State
@@ -17,6 +18,44 @@ AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY \
 
 There is no state locking (no DynamoDB equivalent on Scaleway) — coordinate
 manually; only one person/pipeline runs apply at a time.
+
+## Supabase provider (B5)
+
+The hosted Supabase project (`supabase_project.marginalia`, ref
+`ahphkkvsofqmxkqzbica` — the live demo DB, Free tier, **no backups**) was
+**adopted by import** in B5; Terraform owns its lifecycle only. Runtime
+settings stay with the Supabase CLI — see `supabase/AGENTS.md` for the
+tool-ownership split.
+
+- **Token:** the provider authenticates via `SUPABASE_ACCESS_TOKEN`, needed
+  at every plan/apply since the provider refreshes the project + API keys.
+  The token is **account-scoped** (controls the whole Supabase org): it
+  lives only in the system keyring (written by `supabase login`) and is
+  injected ephemerally per command — never write it to `.env.local`,
+  tfvars, state, outputs, or Proton Pass. Retrieval that never echoes:
+  `SUPABASE_ACCESS_TOKEN=$(secret-tool lookup service "Supabase CLI" username supabase)`.
+- **Full command wrapper** (state creds + token + TF_VARs via varlock):
+
+  ```sh
+  bunx varlock run -- bash -c '
+    export AWS_ACCESS_KEY_ID=$SCW_ACCESS_KEY AWS_SECRET_ACCESS_KEY=$SCW_SECRET_KEY
+    export SUPABASE_ACCESS_TOKEN=$(secret-tool lookup service "Supabase CLI" username supabase)
+    mise exec -- terraform -chdir=infrastructure <cmd>
+  '
+  ```
+
+- **Import gate (standing rule):** the project resource carries
+  `prevent_destroy`; a plan that proposes to **replace or destroy**
+  `supabase_project.marginalia` is a bug in the config, never something to
+  apply — stop and investigate (org/region/name changes force replacement).
+  `database_password` is under `ignore_changes`: the API can't return it,
+  rotation happens out-of-band (dashboard/CLI), and it is currently *not*
+  in state (import couldn't read it; it would land there only on a
+  hypothetical recreation).
+- The container's Supabase URL + anon/service-role keys come from the
+  `supabase_apikeys` data source (`supabase.tf`), not TF_VARs — the data
+  source read persists those keys in state (same accepted class as the
+  container secrets, SEC-6).
 
 ## Containers API gotchas (verified 2026-08-18)
 
@@ -38,6 +77,9 @@ manually; only one person/pipeline runs apply at a time.
   *(Corrected 2026-08-18 — this line previously claimed the resource "stays
   commented until a first image is pushed", stale since B1; found by C5's
   architecture audit.)*
+- The hosted Supabase project (`supabase.tf`, imported in B5 — see the
+  Supabase provider section above) + the `supabase_apikeys` data source
+  feeding the container env.
 
 ## Working rules
 
