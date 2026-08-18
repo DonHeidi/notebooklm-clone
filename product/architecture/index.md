@@ -6,6 +6,14 @@
 > written — nothing from them appears here; the pages note where their work
 > will land. Later sessions append corrections rather than silently rewriting
 > (root `AGENTS.md`, "correct the record").
+>
+> **Update (2026-08-18, session C8):** the roadmap board has since merged
+> completely (A5, D2, A6, A7, B3–B5, C6–C7). The views carry dated
+> corrections where that changed what they describe — the logical view's
+> artifacts table (D2), the process view's second pipeline and quota step
+> (D2/A6), the development view's test setup and providers (A7/B4/B5), and
+> the physical view's hosted, custom-domained, Terraform-managed platform
+> (B3/B4/B5). The full chronological record is `product/history/`.
 
 Kruchten's 4+1 model describes a software architecture through four
 complementary views — logical (the domain model), process (runtime dynamics),

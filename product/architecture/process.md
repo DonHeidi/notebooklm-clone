@@ -7,6 +7,18 @@
 > A3), auth/session ([PR #10](https://github.com/DonHeidi/notebooklm-clone/pull/10)
 > A2). D2 (audio overview) is adding a second async pipeline in flight —
 > not covered here.
+>
+> **Correction (2026-08-18, session C8):** D2 merged the same day
+> ([PR #27](https://github.com/DonHeidi/notebooklm-clone/pull/27)). Its
+> pipeline deliberately mirrors the ingestion sequence below — pending →
+> `after()` → processing → script LLM → TTS → service-role upload → ready,
+> failures → failed with a user-safe message, the same 2.5 s polling —
+> with guards of ≤1 concurrent generation and ≤20 artifacts per notebook;
+> record in `product/history/webapp.md`. A6
+> ([PR #49](https://github.com/DonHeidi/notebooklm-clone/pull/49)) also
+> added one step to the grounded-chat request: a per-notebook daily quota
+> is asserted **before** retrieval, so a capped notebook answers HTTP 429
+> without any token spend.
 
 ## The grounded-chat request
 

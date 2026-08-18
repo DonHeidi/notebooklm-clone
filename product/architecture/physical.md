@@ -15,6 +15,11 @@
 > **Extended 2026-08-18** (session C6): "Platform choice" section added,
 > referencing decision D-10.
 
+> **Update (2026-08-18, session C8):** the hosted Supabase project is now
+> Terraform-managed (session B5,
+> [PR #48](https://github.com/DonHeidi/notebooklm-clone/pull/48)) — see the
+> updated *Terraform* section and the note under *Hosted Supabase (B3)*.
+
 ## Platform choice
 
 The target company works with AWS; running on Scaleway is a deliberate,
@@ -58,6 +63,31 @@ namespace, the container namespace, and the `scaleway_container` webapp
 resource. State lives on the Scaleway S3-compatible backend (B2); the
 backend reads AWS-named credentials, and there is **no state locking** —
 one person/pipeline applies at a time (`infrastructure/AGENTS.md`).
+
+*(Updated 2026-08-18, session C8, for B4 and B5.)* Since B4
+([PR #45](https://github.com/DonHeidi/notebooklm-clone/pull/45)), the same
+configuration also manages the `mrgnl.eu` DNS zone and records, the Edge
+Services pipelines, and the apex-redirect function (`domain.tf` — see
+*Custom domain (B4)* below). Since B5
+([PR #48](https://github.com/DonHeidi/notebooklm-clone/pull/48)), a second
+provider, `supabase/supabase`, manages the **hosted Supabase project by
+import only**: `supabase_project.marginalia` in `supabase.tf` carries
+`prevent_destroy = true` and a permanent import block, and the adoption
+gate was a `terraform plan -detailed-exitcode` exit-0 — a plan that
+proposes replace/destroy on the project is a config bug, never something
+to apply (`infrastructure/AGENTS.md`). The container's Supabase env values
+come from the `supabase_apikeys` data source instead of hand-copied
+variables. Terraform owns only the project's *lifecycle*; migrations,
+storage policies, and all `config.toml`-modeled settings stay with the
+Supabase CLI — the ownership split is documented in `supabase/AGENTS.md`.
+Two state/credential nuances (SEC-6, `product/security.md`): the hosted
+**database password is not in Terraform state** (unreadable at import;
+`ignore_changes = [database_password]`), while the anon and service-role
+keys read by the data source **are** — the same accepted class as the
+container's `secret_environment_variables`. Every plan/apply now requires
+`SUPABASE_ACCESS_TOKEN`, which is keyring-only and injected per command
+(wrapper in `infrastructure/AGENTS.md`), never stored in `.env.local`,
+state, or the vault.
 
 ## Deploy workflows (both manual `workflow_dispatch` for the prototype)
 
@@ -110,6 +140,18 @@ endpoint). The container now receives `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`,
 `prepare: false`), `AZURE_SPEECH_KEY`, `SCW_GENERATIVE_APIS_KEY` as secret
 env, all via Terraform; `min_scale` is the `webapp_min_scale` tfvar
 (0 idle / 1 for demo windows).
+
+> **Update (2026-08-18, session C8):** since B5
+> ([PR #48](https://github.com/DonHeidi/notebooklm-clone/pull/48)) the
+> project itself is a Terraform resource (import-only — see the *Terraform*
+> section above), and the container's `NEXT_PUBLIC_SUPABASE_URL`, anon key,
+> and service-role key are fed from the `supabase_apikeys` data source
+> rather than `TF_VAR`s; the legacy `TF_VAR_supabase_*` declarations are
+> annotated as prunable in `.env.schema` (still read by `seed:demo`'s
+> hosted mode — foreman-2 handover). The Free tier's no-backups trade-off
+> now has a recorded recovery procedure: recreate the project (migrations
+> and config are all code), then run A6's idempotent `bun run seed:demo`
+> ([PR #49](https://github.com/DonHeidi/notebooklm-clone/pull/49)).
 
 ## Custom domain (B4, 2026-08-18)
 

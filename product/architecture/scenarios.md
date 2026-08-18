@@ -74,6 +74,14 @@ history rehydrated with chips whose `data-chunk-id`s matched the citations
 table exactly. (Chip → viewer scroll navigation is A5's in-flight work; the
 chips already carry the chunk/source ids for it.)
 
+> **Correction (2026-08-18, session C8):** shipped — A5
+> ([PR #29](https://github.com/DonHeidi/notebooklm-clone/pull/29)) wired
+> chip → viewer navigation with the cited passage highlighted and
+> scrolled into view, and B3's deployed E2E
+> ([PR #36](https://github.com/DonHeidi/notebooklm-clone/pull/36)) re-ran
+> this whole trace — including the click-through and an audio overview —
+> against the hosted stack on the public URL.
+
 **Views exercised:** logical (retrieval abstraction, citation invariants,
 grounding contract), process (the whole request sequence), physical (SSE
 through the platform, Generative APIs), development (RRF and marker
