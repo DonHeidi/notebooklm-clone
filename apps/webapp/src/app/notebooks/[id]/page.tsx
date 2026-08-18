@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
+import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
 import { NotebookTitle } from "@/components/notebook-title";
+import { SourcesPanel } from "@/components/sources/sources-panel";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
 import { getNotebook } from "@/server/services/notebook-service";
@@ -10,7 +12,7 @@ import { getNotebook } from "@/server/services/notebook-service";
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// The Sources / Chat / Studio panels are placeholders for sessions A3/A4/D2.
+// The Chat / Studio panels are placeholders for sessions A4/A5/D2.
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -45,9 +47,17 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
       </header>
 
       <div className="flex min-h-0 flex-1 gap-3 p-3">
-        <WorkspacePanel title="Sources" className="w-72 shrink-0">
-          Sources will appear here once ingestion lands (session A3).
-        </WorkspacePanel>
+        <section
+          aria-label="Sources"
+          className="flex w-80 shrink-0 flex-col rounded-xl border bg-card"
+        >
+          <h2 className="border-b px-4 py-2.5 text-sm font-medium">Sources</h2>
+          <SourcesPanel
+            notebookId={notebook.id}
+            userId={user.id}
+            initialSources={await listSourcesAction(notebook.id)}
+          />
+        </section>
         <WorkspacePanel title="Chat" className="flex-1">
           Grounded chat over your sources is coming in session A4.
         </WorkspacePanel>
