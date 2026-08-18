@@ -21,7 +21,7 @@ import { startOfUtcDay } from "./quota";
 // Business layer for the grounded chat (CF-05/06/07/08): conversation
 // lifecycle, retrieval → system prompt, and message persistence. The route
 // handler owns streaming; everything stateful lives here so it is testable
-// against PGlite with a fake embedder.
+// against a real Postgres (D-9) with a fake embedder.
 
 // How many of the most recent messages are sent to the model as context
 // (simple fixed window ≙ 6 exchanges — CF-08 MVP).

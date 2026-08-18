@@ -15,7 +15,7 @@ import { downloadSourceObject } from "../storage";
 // moves this same code into a Serverless Job without touching schema or UI.
 
 // All I/O boundaries are injectable so tests run the real pipeline against
-// PGlite with a fake embedder and fixture bytes — no network.
+// a real Postgres (D-9) with a fake embedder and fixture bytes — no network.
 export type IngestionDeps = {
   db?: Database;
   embedder?: Embedder;
