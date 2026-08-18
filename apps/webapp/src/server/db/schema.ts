@@ -11,6 +11,7 @@ import {
   customType,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -182,6 +183,55 @@ export const citations = pgTable(
   (t) => [
     uniqueIndex("citations_message_id_ordinal_idx").on(t.messageId, t.ordinal),
   ],
+);
+
+// Studio artifacts (scope §3): one generic table for all generated artifact
+// types; `audio_overview` (CF-12) is the first. Generation is async (SF-09) —
+// `status` is the job state, mirroring sources.status.
+export const artifactType = pgEnum("artifact_type", ["audio_overview"]);
+export const artifactStatus = pgEnum("artifact_status", [
+  "pending",
+  "processing",
+  "ready",
+  "failed",
+]);
+
+// Per-generation settings, stored so "regenerate" can replay them. Shape is
+// per artifact type; audio_overview uses AudioOverviewConfig.
+export type AudioOverviewConfig = {
+  language: "de" | "en";
+  // Provider-neutral voice key, mapped to a concrete voice by the TtsProvider
+  // adapter (feasibility D-8).
+  voice: string;
+  focusPrompt?: string;
+  // The sources the artifact was generated from (CF-05 selection, validated
+  // owner-scoped at creation time).
+  sourceIds: string[];
+};
+
+export const artifacts = pgTable(
+  "artifacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    notebookId: uuid("notebook_id")
+      .notNull()
+      .references(() => notebooks.id, { onDelete: "cascade" }),
+    type: artifactType("type").notNull(),
+    title: text("title").notNull(),
+    status: artifactStatus("status").notNull().default("pending"),
+    errorMessage: text("error_message"),
+    config: jsonb("config").$type<AudioOverviewConfig>().notNull(),
+    // Object in the private `artifacts` storage bucket, set when ready.
+    storagePath: text("storage_path"),
+    durationSeconds: integer("duration_seconds"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("artifacts_notebook_id_idx").on(t.notebookId)],
 );
 
 export const notes = pgTable(

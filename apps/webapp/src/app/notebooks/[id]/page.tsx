@@ -3,17 +3,21 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
+import { listArtifactsAction } from "@/app/notebooks/[id]/studio/actions";
 import { NotebookTitle } from "@/components/notebook-title";
 import { NotebookWorkspace } from "@/components/chat/notebook-workspace";
+import { StudioPanel } from "@/components/studio/studio-panel";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
+import { DEFAULT_VOICE, VOICE_OPTIONS } from "@/server/audio/voices";
 import { loadConversation, toUIMessages } from "@/server/services/chat-service";
 import { getNotebook } from "@/server/services/notebook-service";
 
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// Sources + Chat are live (A3/A4); the Studio panel is D2/A5's placeholder.
+// Sources + Chat are live (A3/A4); Studio hosts generated artifacts (D2);
+// notes join the Studio column in A5.
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -59,33 +63,19 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
           initialSources={await listSourcesAction(notebook.id)}
           initialMessages={toUIMessages(conversation?.messages ?? [])}
         >
-          <WorkspacePanel title="Studio" className="w-72 shrink-0">
-            Notes and generated artifacts will live here (sessions A5/D2).
-          </WorkspacePanel>
+          <section
+            aria-label="Studio"
+            className="flex w-72 shrink-0 flex-col rounded-xl border bg-card"
+          >
+            <h2 className="border-b px-4 py-2.5 text-sm font-medium">Studio</h2>
+            <StudioPanel
+              notebookId={notebook.id}
+              voices={{ options: VOICE_OPTIONS, defaults: DEFAULT_VOICE }}
+              initialArtifacts={await listArtifactsAction(notebook.id)}
+            />
+          </section>
         </NotebookWorkspace>
       </div>
     </div>
-  );
-}
-
-function WorkspacePanel({
-  title,
-  className,
-  children,
-}: {
-  title: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section
-      aria-label={title}
-      className={`flex flex-col rounded-xl border bg-card ${className ?? ""}`}
-    >
-      <h2 className="border-b px-4 py-2.5 text-sm font-medium">{title}</h2>
-      <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-        {children}
-      </div>
-    </section>
   );
 }
