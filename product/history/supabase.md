@@ -79,7 +79,16 @@ all migrations in order) → schema changes via
 `supabase migration up` or reset with `supabase db reset`. Repository tests
 don't need the stack at all — they run on PGlite (in-process WASM Postgres
 with pgvector) migrated with the actual generated SQL, so the migrations
-themselves are what's tested. Local email confirmation is disabled in
+themselves are what's tested.
+
+> **Correction (2026-08-18, session A7, D-9).** Inverted since: PGlite was
+> retired (it exits 99 under Bun and its cold init broke CI), and DB-backed
+> tests now *default to this stack's Postgres*, creating throwaway
+> `marginalia_test_*` databases on `:54322`. The
+> migrated-with-the-actual-SQL property is preserved. See
+> `product/feasibility.md` D-9 and `supabase/AGENTS.md`.
+
+Local email confirmation is disabled in
 `config.toml`, so signup works offline; A2 kept that file unchanged and
 handles the confirmation-enabled case defensively anyway.
 

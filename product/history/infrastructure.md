@@ -117,6 +117,12 @@
   first `new PGlite()` (WASM compile) intermittently took >5 s on a GitHub
   runner, failing a `beforeAll` as `(fail) (unnamed)`. CI runs
   `bun test --timeout 30000` (commit `89b4fad`).
+
+  > **Resolution (2026-08-18, session A7, D-9).** Both PGlite issues above
+  > are gone at the root: DB-backed tests moved to a real Postgres +
+  > pgvector (local Supabase stack / CI service container), PGlite was
+  > removed, and CI's exit-99 allowlist and raised timeout were reverted to
+  > a plain `bun test`.
 - **`workflow_dispatch` workflows aren't dispatchable until merged.** GitHub
   only indexes them from the default branch, so B2's one-time deploy ran the
   identical steps locally; the first post-merge dispatch (which then found
