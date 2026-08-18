@@ -1,0 +1,27 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+import { historyPages } from "../../nav";
+
+export async function getStaticPaths() {
+  return historyPages.map((page) => ({
+    params: { id: page.id },
+    props: { page },
+  }));
+}
+
+interface Props {
+  page: (typeof historyPages)[number];
+}
+
+const { page } = Astro.props;
+const entry = await getEntry("history", page.id);
+if (!entry) throw new Error(`product/history/${page.id}.md not found`);
+---
+
+<DocPage
+  entry={entry}
+  sourcePath={`product/history/${page.id}.md`}
+  title={`${page.label} history — Marginalia Docs`}
+  description={`Project history of the ${page.label.toLowerCase()}: ${page.text}`}
+/>

@@ -42,6 +42,44 @@ export async function getSessions(): Promise<SessionEntry[]> {
     .sort((a, b) => a.entry.id.localeCompare(b.entry.id));
 }
 
+/**
+ * The history pages in `product/history/`, in reading order (one per
+ * package, process last). Labels are maintained here because the canonical
+ * files have no frontmatter.
+ */
+export const historyPages: { id: string; label: string; text: string }[] = [
+  {
+    id: "webapp",
+    label: "Webapp",
+    text: "Schema and the vector(2000) decision, auth, the ingestion pipeline — and the bugs met along the way.",
+  },
+  {
+    id: "supabase",
+    label: "Supabase",
+    text: "The schema-ownership split, one migration timeline, pgvector/HNSW, storage RLS, and the local-dev flow.",
+  },
+  {
+    id: "infrastructure",
+    label: "Infrastructure",
+    text: "The SSE spike verdict with its measurements, Terraform state bootstrap, Containers API drift, CI and deploys.",
+  },
+  {
+    id: "marketing",
+    label: "Marketing site",
+    text: "The Marginalia identity, the self-citing page, honest-copy constraints, and the legal pages.",
+  },
+  {
+    id: "docs",
+    label: "Docs site",
+    text: "Render-don't-copy, provenance cards, and the choices behind this very site.",
+  },
+  {
+    id: "process",
+    label: "Process",
+    text: "The cross-cutting story: tooling, the foreman and parallel lanes, what the parallelism delivered and where it rubbed.",
+  },
+];
+
 export async function getNavGroups(): Promise<NavGroup[]> {
   const sessions = await getSessions();
   return [
@@ -63,6 +101,13 @@ export async function getNavGroups(): Promise<NavGroup[]> {
     {
       label: "Roadmap",
       items: [{ href: "/roadmap/", label: "7-day prototype" }],
+    },
+    {
+      label: "History",
+      items: [
+        { href: "/history/", label: "Overview" },
+        ...historyPages.map((p) => ({ href: `/history/${p.id}/`, label: p.label })),
+      ],
     },
     {
       label: "Sessions",
