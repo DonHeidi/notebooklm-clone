@@ -62,7 +62,7 @@ Outcome (2026-08-18): targeted plan showed exactly `1 to add, 0 to change,
 - **Docs** — https://marginalia-docs.s3-website.fr-par.scw.cloud (HTTP 200)
 - **Marketing** — https://marginalia-marketing.s3-website.fr-par.scw.cloud (HTTP 200)
 
-The one-time deploy ran the workflow steps locally (see gotcha 3); the image
+The one-time deploy ran the workflow steps locally (see gotcha 4); the image
 was built from this branch, whose app content is identical to main + the
 Dockerfile build args (main's Dockerfile alone no longer builds since A2 —
 the build args commit is required).
@@ -76,14 +76,19 @@ the build args commit is required).
    checks `$?` by hand. CI accepts exactly the `exit 99 && "0 fail"`
    signature and fails everything else. Worth an upstream report; A-lane
    should know it exists.
-2. **Containers API is `containers/v1` now** (not v1beta1): field is `image`
+2. **PGlite cold init can blow bun's 5 s hook timeout on CI runners** — the
+   first `new PGlite()` (WASM compile) intermittently took >5 s on a GitHub
+   runner, failing a repository test file's `beforeAll` as `(fail) (unnamed)`.
+   CI runs `bun test --timeout 30000`; A-lane may want the same locally on
+   slow machines.
+3. **Containers API is `containers/v1` now** (not v1beta1): field is `image`
    (`registry_image` is gone, matching the provider deprecations B1 hit) and
    a PATCH does **not** roll out on its own — POST `/redeploy` is required.
-3. **Deploy workflows are not dispatchable until merged** — GitHub only
+4. **Deploy workflows are not dispatchable until merged** — GitHub only
    indexes `workflow_dispatch` workflows from the default branch. The
    one-time deploy of this session ran the identical steps locally; first
    post-merge dispatch of both workflows is a good foreman follow-up.
-4. **`memory_limit_bytes` drift**: config says `2 * 1024^3` (2147483648) but
+5. **`memory_limit_bytes` drift**: config says `2 * 1024^3` (2147483648) but
    the API stored 2147000000, so unrestricted plans show a benign in-place
    container update. Not fixed here (kept the apply strictly targeted);
    consider aligning the config value to 2147000000.

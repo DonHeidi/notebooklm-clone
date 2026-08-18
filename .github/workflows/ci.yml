@@ -53,9 +53,12 @@ jobs:
         # a "0 fail" summary. Any other nonzero exit still fails the job
         # (bun test's exit code is the failure count, so 99 real failures
         # would print "99 fail" and not match).
+        # --timeout 30000: the first PGlite instantiation (WASM compile) can
+        # exceed bun's default 5 s per-test/hook timeout on slow CI runners,
+        # failing a repository test file's beforeAll as "(unnamed)".
         run: |
           set +e
-          bun test 2>&1 | tee bun-test.log
+          bun test --timeout 30000 2>&1 | tee bun-test.log
           code=${PIPESTATUS[0]}
           set -e
           if [ "$code" = "0" ]; then exit 0; fi
