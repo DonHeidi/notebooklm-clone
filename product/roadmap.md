@@ -10,6 +10,11 @@
 > are unreliable; day numbers below are loose sequencing guidance only.
 > **Parallelism:** 3+ lanes at once. Review is the human bottleneck: PRs stay
 > small, merged to `main` at least daily, review batched ~twice a day.
+> **Note (2026-08-18):** this roadmap is the authoritative plan;
+> `product/scope.md` is the research catalog it draws from. Audio Overview
+> sits in research phase 2 of scope §8 — pulling it into the 7-day end
+> state was a deliberate decision: it is the prototype's differentiator
+> (sessions D1/D2).
 
 ## Ground rules
 
@@ -92,10 +97,20 @@ Bugfixes across lanes, demo walkthrough script, final handovers, README.
 
 ## Cut list (explicitly out of the 7 days)
 
-YouTube/Drive/audio-file ingestion · sharing & collaboration · Fast/Deep
-Research (no stub UI — the search box is simply absent) · mind maps,
-flashcards, quizzes, standalone reports · multi-language output · analytics ·
-note→source conversion · two-speaker/interactive audio.
+YouTube/Drive/audio-file ingestion · sharing & collaboration (incl. public
+notebooks — SF-06) · Fast/Deep Research (no stub UI — the search box is
+simply absent) · mind maps, flashcards, quizzes, standalone reports ·
+multi-language output · analytics · note→source conversion ·
+two-speaker/interactive audio.
 
-Everything cut remains in `product/scope.md` phases 2–5 and can be appended
-here as new sessions whenever we choose.
+Added 2026-08-18 (C10 scope reconciliation — deferrals that were decided in
+practice but never recorded here): chat configuration (CF-09 — custom
+instructions, preset modes, response length) · ingestion formats beyond
+PDF/TXT/Markdown/pasted text/URL (DOCX, CSV, PowerPoint, EPUB, images,
+Google Workspace imports — CF-02) · auto-generated source summaries /
+Source Guide (CF-04) · server-side stop + regenerate response (CF-08) ·
+queued, recoverable job infrastructure (SF-09 — the prototype runs
+feasibility D-2 stage 1 in-process instead).
+
+Everything cut remains in `product/scope.md` (research phases 2–5) and can
+be appended here as new sessions whenever we choose.

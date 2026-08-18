@@ -6,13 +6,26 @@
 > (§8) as the working roadmap; individual CF/SF items are re-validated when a
 > session picks them up.
 
+> **Role of this document (owner decision, 2026-08-18):** this file is the
+> **research catalog** of Gemini Notebook's functionality — the descriptive
+> result of the research phase, not a set of commitments. The authoritative
+> plan is [roadmap.md](roadmap.md), and the shipped 7-day prototype is the
+> delivered goal. The "MVP:" markers throughout are research-time
+> recommendations, and the §8 phase plan is the research-era sketch — both
+> are annotated in place below. This supersedes the provenance note above
+> where it calls the §8 phase plan "the working roadmap".
+
 ## Implementation status (as of 2026-08-18)
 
-The scope text below is the adopted target and is unchanged; the table and
-the per-item badges track the shipped reality of the current deployed
-version (through session B3, [#36](https://github.com/DonHeidi/notebooklm-clone/pull/36)), sourced from merged PRs and the E2E
-evidence recorded in them. Legend: ✅ in current version · 🔶 partial ·
-⏳ planned · ❌ cut for v1 (see the roadmap cut list in [roadmap.md](roadmap.md)).
+The scope text below is the adopted research text and is unchanged; the
+table and the per-item badges track the shipped reality of the current
+deployed version (through session A6, [#49](https://github.com/DonHeidi/notebooklm-clone/pull/49) — updated 2026-08-18 by the C10
+reconciliation; C7's original snapshot read through B3, [#36](https://github.com/DonHeidi/notebooklm-clone/pull/36)), sourced from
+merged PRs and the E2E evidence recorded in them. Legend: ✅ in current
+version · 🔶 partial · ⏳ future candidate (sits in a §8 research phase; no
+roadmap session) · ❌ not in the prototype — cut or never planned; each ❌
+badge cites where that is recorded (the [roadmap cut list](roadmap.md), scope §9, or the
+item's own applicability condition).
 
 | ID | Item | Status | Evidence |
 | --- | --- | --- | --- |
@@ -24,23 +37,23 @@ evidence recorded in them. Legend: ✅ in current version · 🔶 partial ·
 | CF-06 | Grounded AI Chat | ✅ | [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24) |
 | CF-07 | Inline Citations | ✅ | [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24), [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29), [#36](https://github.com/DonHeidi/notebooklm-clone/pull/36) |
 | CF-08 | Conversation State | 🔶 | [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24) |
-| CF-09 | Chat Configuration | ❌ | not shipped |
+| CF-09 | Chat Configuration | ❌ | cut list (recorded 2026-08-18) |
 | CF-10 | Notes | 🔶 | [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29) |
 | CF-11 | Reports | ❌ | cut list |
 | CF-12 | Audio Overview | 🔶 | [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27) |
 | CF-13 | Mind Maps | ❌ | cut list |
 | CF-14 | Flashcards | ❌ | cut list |
 | CF-15 | Quizzes | ❌ | cut list |
-| CF-16 | Infographics | ⏳ | phase 3 |
-| CF-17 | Slide Deck Generation | ⏳ | phase 3 |
-| CF-18 | Video Overview | ⏳ | phase 4 |
+| CF-16 | Infographics | ⏳ | research phase 3 |
+| CF-17 | Slide Deck Generation | ⏳ | research phase 3 |
+| CF-18 | Video Overview | ⏳ | research phase 4 |
 | CF-19 | Web Source Discovery | ❌ | cut list |
 | CF-20 | Deep Research | ❌ | cut list |
-| CF-21 | Code Execution | ⏳ | phase 5 |
-| CF-22 | General Artifact/File Generation | ⏳ | phase 5 |
+| CF-21 | Code Execution | ⏳ | research phase 5 |
+| CF-22 | General Artifact/File Generation | ⏳ | research phase 5 |
 | SF-01 | Authentication and Account Management | 🔶 | [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10) |
 | SF-02 | Notebook Library / Home Screen | ✅ | [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10) |
-| SF-03 | Source Organisation | ⏳ | phase 2 |
+| SF-03 | Source Organisation | ⏳ | research phase 2 |
 | SF-04 | Cloud Source Synchronisation | ❌ | cut list |
 | SF-05 | Sharing and Collaboration | ❌ | cut list |
 | SF-06 | Public Notebooks | ❌ | cut list |
@@ -51,7 +64,7 @@ evidence recorded in them. Legend: ✅ in current version · 🔶 partial ·
 | SF-11 | Usage Limits and Quotas | 🔶 | [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27), [#49](https://github.com/DonHeidi/notebooklm-clone/pull/49) |
 | SF-12 | Subscription / Feature Entitlements | ❌ | out of v1 scope |
 | SF-13 | Usage Analytics | ❌ | cut list |
-| SF-14 | Feedback | ⏳ | unscheduled |
+| SF-14 | Feedback | ❌ | not planned (no phase, no session) |
 
 # Gemini Notebook / NotebookLM Clone — Product Scope
 
@@ -153,6 +166,7 @@ This subsystem is effectively the knowledge layer underneath the notebook.
 ## CF-04 — Source Viewer
 
 > **Status (2026-08-18): 🔶 Partial** — viewer with extracted content, removal and cited-passage navigation shipped (A3/A5, [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29)); no auto-generated source summary (Source Guide), and the viewer is dialog-only (not URL-addressable).
+> **Deferral (2026-08-18):** the auto-generated source summary (Source Guide) was consciously deferred past the prototype — recorded on the [roadmap cut list](roadmap.md) 2026-08-18. The research-time "MVP: Required" marker below covers the viewer as a whole, not this sub-capability.
 
 Users must be able to inspect their source material from inside the application.
 
@@ -256,6 +270,7 @@ A generic RAG chatbot without this feature would not be a convincing NotebookLM 
 ## CF-08 — Conversation State
 
 > **Status (2026-08-18): 🔶 Partial** — persistent history, multi-turn context and clear-chat shipped (A4, [#24](https://github.com/DonHeidi/notebooklm-clone/pull/24)); stop is client-side only (server generation runs to completion) and regenerate was skipped.
+> **Deferral (2026-08-18):** server-side stop and regenerate were consciously deferred past the prototype — recorded on the [roadmap cut list](roadmap.md) 2026-08-18. Stop is client-side only because the platform does not reliably deliver mid-stream aborts to the handler; the known-behavior record is the A4 handover (`handovers/2026-08-18-session-a4-grounded-chat.md`, "Gotchas" §1), which judged an explicit abort beacon out of prototype proportion.
 
 Chat should maintain notebook-specific conversational context.
 
@@ -277,6 +292,7 @@ Gemini Notebook retains chat history privately for the user and provides explici
 ## CF-09 — Chat Configuration
 
 > **Status (2026-08-18): ❌ Cut for v1** — no chat configuration shipped (no custom instructions, preset modes or response-length controls).
+> **Deferral (2026-08-18):** chat configuration was never scheduled in any roadmap session; the deferral past the prototype is a conscious decision, recorded on the [roadmap cut list](roadmap.md) 2026-08-18. The "MVP: Basic system/custom instructions" marker below is a research-time recommendation (see the document-role note at the top).
 
 Users can influence how the assistant responds.
 
@@ -297,6 +313,7 @@ Current Notebook functionality includes:
 ## CF-10 — Notes
 
 > **Status (2026-08-18): 🔶 Partial** — note CRUD and save-response-as-note with citations preserved and navigable shipped (A5, [#29](https://github.com/DonHeidi/notebooklm-clone/pull/29)); note→source conversion is on the roadmap cut list.
+> **Deferral (2026-08-18):** note→source conversion stays deferred (on the [roadmap cut list](roadmap.md) since adoption); the research-time "MVP: Required" marker below covers the note loop that shipped, not the conversion.
 
 A notebook contains user-created notes in addition to imported sources.
 
@@ -341,7 +358,8 @@ Generation should occur asynchronously so the user can continue working.
 
 ## CF-11 — Reports
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (standalone reports); remains phase 2 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (standalone reports); remains research-phase-2 scope.
+> **Deferral (2026-08-18):** no report generation was scheduled in any roadmap session — a conscious deferral past the prototype. The "MVP: At least generic report generation" marker below is a research-time recommendation (see the document-role note at the top).
 
 Generate structured long-form material from sources.
 
@@ -398,7 +416,7 @@ The current product also supports joining an Audio Overview through voice and as
 
 ## CF-13 — Mind Maps
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (mind maps); remains phase 3 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (mind maps); remains research-phase-3 scope.
 
 Generate a graphical representation of concepts and relationships found across notebook sources.
 
@@ -419,7 +437,7 @@ Gemini Notebook provides all of these interactions.
 
 ## CF-14 — Flashcards
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (flashcards); remains phase 3 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (flashcards); remains research-phase-3 scope.
 
 Generate interactive study cards from notebook material.
 
@@ -440,7 +458,7 @@ Gemini Notebook generates flashcards directly from notebook sources and supports
 
 ## CF-15 — Quizzes
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (quizzes); remains phase 3 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (quizzes); remains research-phase-3 scope.
 
 Generate interactive assessments grounded in notebook content.
 
@@ -460,7 +478,7 @@ Capabilities:
 
 ## CF-16 — Infographics
 
-> **Status (2026-08-18): ⏳ Planned (phase 3)** — see the §8 phase plan.
+> **Status (2026-08-18): ⏳ Future candidate (research phase 3)** — see the §8 research-phase sketch; no roadmap session.
 
 Convert notebook information into a generated visual summary.
 
@@ -482,7 +500,7 @@ Generated infographics can be downloaded as PNG files.
 
 ## CF-17 — Slide Deck Generation
 
-> **Status (2026-08-18): ⏳ Planned (phase 3)** — see the §8 phase plan.
+> **Status (2026-08-18): ⏳ Future candidate (research phase 3)** — see the §8 research-phase sketch; no roadmap session.
 
 Generate a presentation from notebook sources.
 
@@ -503,7 +521,7 @@ Slide Deck is currently a first-class Studio artifact in Gemini Notebook.
 
 ## CF-18 — Video Overview
 
-> **Status (2026-08-18): ⏳ Planned (phase 4)** — see the §8 phase plan.
+> **Status (2026-08-18): ⏳ Future candidate (research phase 4)** — see the §8 research-phase sketch; no roadmap session.
 
 Generate narrated visual summaries of notebook sources.
 
@@ -534,7 +552,7 @@ The infrastructure and generation cost make this a poor MVP feature.
 
 ## CF-19 — Web Source Discovery
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (Fast/Deep Research — deliberately no stub UI); remains phase 2 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (Fast/Deep Research — deliberately no stub UI); remains research-phase-2 scope.
 
 Users can describe what they are researching instead of supplying every source manually.
 
@@ -564,7 +582,7 @@ The current product calls its lightweight version **Fast Research**.
 
 ## CF-20 — Deep Research
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (Fast/Deep Research); remains phase 5 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (Fast/Deep Research); remains research-phase-5 scope.
 
 An agent can perform multi-step web research and produce:
 
@@ -585,7 +603,7 @@ These capabilities belong to the 2026 Gemini Notebook rather than the original N
 
 ## CF-21 — Code Execution
 
-> **Status (2026-08-18): ⏳ Planned (phase 5)** — see the §8 phase plan.
+> **Status (2026-08-18): ⏳ Future candidate (research phase 5)** — see the §8 research-phase sketch; no roadmap session.
 
 The AI can use an isolated cloud execution environment to run generated code against source material.
 
@@ -607,7 +625,7 @@ Google now attaches a secure cloud computer to supported Gemini Notebook tiers f
 
 ## CF-22 — General Artifact/File Generation
 
-> **Status (2026-08-18): ⏳ Planned (phase 5)** — see the §8 phase plan.
+> **Status (2026-08-18): ⏳ Future candidate (research phase 5)** — see the §8 research-phase sketch; no roadmap session.
 
 Current premium Gemini Notebook can generate downloadable:
 
@@ -634,7 +652,7 @@ These features support the primary workflow but do not define the central source
 
 ## SF-01 — Authentication and Account Management
 
-> **Status (2026-08-18): 🔶 Partial** — email+password signup/login/logout with server-side session handling shipped (A2, [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10)); no SSO/OAuth, account deletion or subscription association.
+> **Status (2026-08-18): 🔶 Partial** — email+password signup/login/logout with server-side session handling shipped (A2, [#10](https://github.com/DonHeidi/notebooklm-clone/pull/10)); no SSO/OAuth, account deletion or subscription association. The research text gives this item no MVP marker; auth was built anyway as the prerequisite for everything user-scoped (RLS, quotas).
 
 * sign up
 * log in/out
@@ -664,7 +682,7 @@ Users need a central workspace from which they can:
 
 ## SF-03 — Source Organisation
 
-> **Status (2026-08-18): ⏳ Planned (phase 2)** — see the §8 phase plan (labels).
+> **Status (2026-08-18): ⏳ Future candidate (research phase 2)** — see the §8 research-phase sketch (labels); no roadmap session.
 
 For notebooks containing many sources:
 
@@ -702,7 +720,7 @@ Google Drive sources in Gemini Notebook can automatically synchronise when the s
 
 ## SF-05 — Sharing and Collaboration
 
-> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (sharing & collaboration); remains phase 2 scope.
+> **Status (2026-08-18): ❌ Cut for v1** — roadmap cut list (sharing & collaboration); remains research-phase-2 scope.
 
 Notebook access model:
 
@@ -775,6 +793,7 @@ Audio, video, infographics and mind maps currently expose various combinations o
 ## SF-09 — Background Generation Jobs
 
 > **Status (2026-08-18): 🔶 Partial** — async generation with status-column polling shipped (feasibility D-2 stage 1; A3/D2, [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)); no queued, recoverable job infrastructure yet.
+> **Deferral (2026-08-18):** queued, recoverable job infrastructure was consciously deferred past the prototype — recorded on the [roadmap cut list](roadmap.md) 2026-08-18. The prototype runs in-process async by decision (feasibility D-2 stage 1); the "MVP: Required once…" marker below is a research-time recommendation.
 
 Long-running artifact generation must not block the application.
 
@@ -890,7 +909,7 @@ Gemini Notebook offers analytics for qualifying shared notebooks.
 
 ## SF-14 — Feedback
 
-> **Status (2026-08-18): ⏳ Planned (no phase assigned yet)** — not shipped, and not on the roadmap cut list.
+> **Status (2026-08-18): ❌ Not planned** — not shipped, in no §8 research phase, and in no roadmap session or cut-list entry. Recorded as a conscious gap by the C10 reconciliation (2026-08-18) — nothing scheduled was dropped; nothing was ever scheduled.
 
 Users should be able to rate:
 
@@ -914,7 +933,10 @@ Google uses explicit thumbs-up/thumbs-down mechanisms across multiple Notebook a
 ---
 
 > **Non-functional status (2026-08-18):** the NF sections below are not badge-tracked
-> per item. The living record of the non-functional side is the security
+> per item — with one deliberate exception: NF-15 (cost control) carries a
+> badge, added when A6 shipped per-user quotas and kept by the C10
+> reconciliation because it is the one NF with discrete shipped scope worth
+> tracking. The living record of the non-functional side is the security
 > register (`product/security.md`, repo-only), the [feasibility register](feasibility.md)
 > (decisions D-1…D-10 and risk rows), and the [architecture views](architecture/index.md),
 > which describe the system as deployed.
@@ -1226,6 +1248,31 @@ Prompt injection from imported webpages and documents is particularly relevant b
 ---
 
 # 8. Recommended Product Scope
+
+> **Status (2026-08-18): research-era phase sketch, superseded by [roadmap.md](roadmap.md).**
+> This section is the research phase's recommended implementation boundary,
+> kept for reference; the roadmap is the plan that was actually executed,
+> and its end state — the core loop plus Audio Overview — is the delivered
+> goal. Note the sketch and the roadmap slice "Phase 1" differently: the
+> table below lists nine capabilities, the "characteristic experience"
+> sentence below it names seven, and the roadmap's end state names five plus
+> Audio Overview. The roadmap wording is authoritative.
+>
+> The CF/SF ids behind each phase row (the mapping the status badges rely
+> on, made explicit here): **Phase 1** — CF-01, CF-02 (PDF/doc/text/web
+> subset), CF-03, CF-04, CF-05, CF-06, CF-07, CF-08, CF-10 · **Phase 2** —
+> CF-11, CF-12 (single-speaker), CF-19, CF-10 (improved notes), SF-03,
+> SF-05/SF-06, SF-10 · **Phase 3** — CF-13, CF-14, CF-15, CF-16, CF-17 ·
+> **Phase 4** — CF-12 (two-speaker/interactive tiers), CF-18 · **Phase 5** —
+> CF-20, CF-21, CF-22. The supporting features SF-01, SF-02, SF-04,
+> SF-07–SF-09 and SF-11–SF-14 were never phase-mapped by the research —
+> which is why SF-14 sits in no phase.
+>
+> **Audio Overview timing:** the sketch places it in phase 2 and "once that
+> foundation works" (below); the roadmap deliberately pulled it into the
+> 7-day prototype as the differentiator (sessions D1/D2, [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)). All three
+> statements describe the same decision from different dates; the roadmap
+> is the one that holds.
 
 A full 2026 Gemini Notebook clone is a substantial product. It combines several products that could independently constitute SaaS offerings.
 
