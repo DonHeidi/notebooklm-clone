@@ -70,9 +70,13 @@ jobs:
             -d "{\"image\": \"$REGISTRY/webapp:$IMAGE_TAG\"}" \
             "$CONTAINERS_API/containers/$container_id" | jq -r '.status')
           echo "status after update: $status"
-          # Updating the image does not roll out on its own — redeploy explicitly.
-          curl -sf "${auth[@]}" -X POST -H "Content-Type: application/json" \
-            -d '{}' "$CONTAINERS_API/containers/$container_id/redeploy" > /dev/null
+          # A PATCH that changes the image already starts a rollout (status
+          # becomes "updating"); calling /redeploy during that rollout 4xxs.
+          # Redeploy explicitly only when the PATCH was a no-op (same image).
+          if [ "$status" != "updating" ]; then
+            curl -sf "${auth[@]}" -X POST -H "Content-Type: application/json" \
+              -d '{}' "$CONTAINERS_API/containers/$container_id/redeploy" > /dev/null
+          fi
 
       - name: Wait for rollout
         run: |
