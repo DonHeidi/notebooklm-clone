@@ -13,6 +13,7 @@ function canonicalRoute(path) {
     [/(?:^|\/)feasibility\.md$/, "/decisions/"],
     [/(?:^|\/)scope\.md$/, "/product/scope/"],
     [/(?:^|\/)ui-research\.md$/, "/product/ui-research/"],
+    [/(?:^|\/)in-numbers\.md$/, "/product/in-numbers/"],
     [/(?:^|\/)roadmap\.md$/, "/roadmap/"],
     [/(?:^|\/)faq\.md$/, "/faq/"],
   ];

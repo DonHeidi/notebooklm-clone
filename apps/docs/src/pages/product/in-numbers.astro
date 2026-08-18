@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "in-numbers");
+if (!entry) throw new Error("product/in-numbers.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/in-numbers.md"
+  title="Marginalia in numbers — Marginalia Docs"
+  description="What the prototype cost to build in API-equivalent inference spend, what it costs to run today, and a modeled 10-user bill — every price fetched and dated."
+/>
