@@ -70,6 +70,7 @@ lanes need a shared `main`. **Blocks everything.**
 | C3 | `feat/legal-pages` | Impressum (§5 DDG) + GDPR privacy page on both static sites (owner-provided data; sites are tracking-free, so the privacy statement is short), footer links. Added 2026-08-18 ahead of the sites going public via B2. | C1, C2 |
 | C4 | `feat/project-history` | Per-package project history as canonical markdown in `product/history/` (one file per workspace: decisions, results, problems + resolutions, sourced from PRs/handovers/feasibility), rendered as a History section in the docs app. Added 2026-08-18. | C2, all merged sessions as source material |
 | C5 | `feat/architecture-views` | 4+1 architectural view model (Kruchten) as canonical docs in `product/architecture/` (logical, process, development, physical views + scenarios), rendered by the docs app. Added 2026-08-18. | C2; describes state incl. A4 |
+| C6 | `docs/architecture-rationale` | Dependency overview + per-dependency rationale in the development view; platform rationale as feasibility **D-10** (owner decision: Scaleway over the company's AWS — cost + lower organisational overhead — with an AWS interchange map showing provider-swap migration), referenced from the physical view. Added 2026-08-18. | C5 |
 
 ### Lane D — Differentiator (joins mid-week)
 
