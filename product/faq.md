@@ -70,8 +70,8 @@ reality is in the physical view; the legal stance is on the privacy pages.
 
 ## Why are some NotebookLM features missing?
 
-By design: the target is **Phase 1** — the grounded-chat core loop plus
-Audio Overview — and the roadmap carries an explicit cut list
+By design: the target is **the prototype end state** — the grounded-chat
+core loop plus Audio Overview — and the roadmap carries an explicit cut list
 (YouTube/Drive ingestion, sharing, research modes, mind maps, and more)
 that stays in the scope's phases 2–5 rather than getting stub UI. The
 smallest product that genuinely captures NotebookLM is Phase 1, and that
