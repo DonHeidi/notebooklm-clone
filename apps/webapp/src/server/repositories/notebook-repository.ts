@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import type { Database } from "../db";
 import { notebooks } from "../db/schema";
 import { NotFoundError } from "./errors";
@@ -20,6 +20,15 @@ export function createNotebookRepository(database: Database) {
         .from(notebooks)
         .where(eq(notebooks.ownerId, ownerId))
         .orderBy(desc(notebooks.updatedAt));
+    },
+
+    // Quota input (SF-11 / NF-15): how many notebooks this user owns.
+    async countByOwner(ownerId: string): Promise<number> {
+      const [row] = await database
+        .select({ value: count() })
+        .from(notebooks)
+        .where(eq(notebooks.ownerId, ownerId));
+      return row.value;
     },
 
     async findById(id: string, ownerId: string): Promise<Notebook | undefined> {

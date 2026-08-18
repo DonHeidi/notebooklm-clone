@@ -48,7 +48,7 @@ evidence recorded in them. Legend: ✅ in current version · 🔶 partial ·
 | SF-08 | Artifact Sharing and Download | 🔶 | [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27) |
 | SF-09 | Background Generation Jobs | 🔶 | [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27) |
 | SF-10 | Language Configuration | 🔶 | [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27) |
-| SF-11 | Usage Limits and Quotas | 🔶 | [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27) |
+| SF-11 | Usage Limits and Quotas | 🔶 | [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27), A6 |
 | SF-12 | Subscription / Feature Entitlements | ❌ | out of v1 scope |
 | SF-13 | Usage Analytics | ❌ | cut list |
 | SF-14 | Feedback | ⏳ | unscheduled |
@@ -823,7 +823,7 @@ Gemini Notebook supports multilingual output, including Audio Overviews in more 
 
 ## SF-11 — Usage Limits and Quotas
 
-> **Status (2026-08-18): 🔶 Partial** — guard limits shipped (20 MB/file, 200k words/source, 50 sources/notebook, 20 artifacts/notebook, 1 concurrent generation; A3/D2, [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)); no request-rate limits on app actions — tracked as SEC-7 in `product/security.md`.
+> **Status (2026-08-18): 🔶 Partial** — guard limits shipped (20 MB/file, 200k words/source, 50 sources/notebook, 20 artifacts/notebook, 1 concurrent generation; A3/D2, [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)); per-user quotas shipped (20 notebooks/user, 50 chat messages/notebook/day, 10 audio overviews/user/day — service-layer enforcement via repository counts; A6); no request-RATE limits on app actions — tracked as SEC-7 in `product/security.md`.
 
 Limits may apply to:
 
@@ -1168,6 +1168,8 @@ is particularly important for debugging incorrect AI answers.
 ---
 
 ## NF-15 — Cost Control
+
+> **Status (2026-08-18): 🔶 Partial** — per-user quotas (notebooks, daily chat messages, daily audio generations; A6), maximum file size / source count / artifact count and 1-concurrent-generation guards (A3/D2, [#15](https://github.com/DonHeidi/notebooklm-clone/pull/15), [#27](https://github.com/DonHeidi/notebooklm-clone/pull/27)). Open: token budgets, model routing, caching, storage quotas, request-rate limiting (SEC-7/SEC-10 in `product/security.md`).
 
 AI and media workloads require explicit safeguards.
 

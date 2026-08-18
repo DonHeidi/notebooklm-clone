@@ -6,6 +6,7 @@ import { requireUser } from "@/server/auth";
 import {
   createNotebook,
   deleteNotebook,
+  NotebookQuotaError,
   renameNotebook,
 } from "@/server/services/notebook-service";
 
@@ -13,9 +14,19 @@ import {
 // re-derives the owner from the verified JWT (requireUser); the client never
 // supplies an owner id.
 
-export async function createNotebookAction(): Promise<void> {
+// Quota rejections come back as messages (SF-11); on success the redirect
+// throws, so callers only ever see the error shape.
+export async function createNotebookAction(): Promise<{ error?: string }> {
   const user = await requireUser();
-  const notebook = await createNotebook(user.id);
+  let notebook;
+  try {
+    notebook = await createNotebook(user.id);
+  } catch (error) {
+    if (error instanceof NotebookQuotaError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
   revalidatePath("/");
   // Instant creation (ui-research §1): land in the new notebook right away.
   redirect(`/notebooks/${notebook.id}`);

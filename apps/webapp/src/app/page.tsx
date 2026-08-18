@@ -1,6 +1,6 @@
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
-import { createNotebookAction } from "@/app/notebooks/actions";
+import { NewNotebookButton } from "@/components/new-notebook-button";
 import { NotebookCard } from "@/components/notebook-card";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
@@ -30,12 +30,7 @@ export default async function LibraryPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-tight">Notebooks</h1>
-          <form action={createNotebookAction}>
-            <Button type="submit">
-              <Plus data-icon="inline-start" />
-              New notebook
-            </Button>
-          </form>
+          <NewNotebookButton />
         </div>
 
         {notebooks.length === 0 ? (
@@ -51,12 +46,7 @@ export default async function LibraryPage() {
                 trace. You can rename it any time.
               </p>
             </div>
-            <form action={createNotebookAction}>
-              <Button type="submit">
-                <Plus data-icon="inline-start" />
-                New notebook
-              </Button>
-            </form>
+            <NewNotebookButton align="center" />
           </div>
         ) : (
           <ul className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

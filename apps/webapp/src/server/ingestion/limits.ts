@@ -1,5 +1,6 @@
-// Ingestion guard rails (NF-15 minimum). Deliberately simple constants —
-// per-user quotas beyond this arrive in A6.
+// Ingestion guard rails (NF-15 minimum). Deliberately simple constants.
+// Per-user quotas (notebooks, daily chat messages, daily audio overviews)
+// live in their owning services — see src/server/services/quota.ts (A6).
 
 // Hard cap per uploaded file. Also enforced server-side by the `sources`
 // storage bucket's file_size_limit (see the storage migration).

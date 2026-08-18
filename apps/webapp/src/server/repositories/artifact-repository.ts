@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, sql } from "drizzle-orm";
+import { and, count, desc, eq, exists, gte, sql } from "drizzle-orm";
 import type { Database } from "../db";
 import { artifacts, notebooks, type AudioOverviewConfig } from "../db/schema";
 import { NotFoundError } from "./errors";
@@ -50,6 +50,19 @@ export function createArtifactRepository(database: Database) {
         .from(artifacts)
         .where(eq(artifacts.notebookId, notebookId))
         .orderBy(desc(artifacts.createdAt), desc(artifacts.id));
+    },
+
+    // Quota input (SF-11 / NF-15): artifacts this user created since a point
+    // in time, across all their notebooks — the per-day generation cap.
+    async countByOwnerSince(ownerId: string, since: Date): Promise<number> {
+      const [row] = await database
+        .select({ value: count() })
+        .from(artifacts)
+        .innerJoin(notebooks, eq(notebooks.id, artifacts.notebookId))
+        .where(
+          and(eq(notebooks.ownerId, ownerId), gte(artifacts.createdAt, since)),
+        );
+      return row.value;
     },
 
     async findById(id: string, ownerId: string): Promise<Artifact | undefined> {
