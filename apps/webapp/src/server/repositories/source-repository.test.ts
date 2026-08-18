@@ -166,6 +166,56 @@ describe("source repository", () => {
     expect(stored.fts).toContain("search");
   });
 
+  test("findChunkLocation resolves a chunk to its passage location", async () => {
+    const repo = createSourceRepository(database);
+    const alice = owner();
+    const notebook = await notebookFor(alice);
+    const source = await repo.create(alice, {
+      notebookId: notebook.id,
+      type: "file",
+      title: "paper.pdf",
+      storagePath: "uploads/paper.pdf",
+    });
+    const [chunk] = await repo.replaceChunks(source.id, alice, [
+      chunkInput(0, "The cited passage"),
+    ]);
+
+    const location = await repo.findChunkLocation(chunk.id, alice);
+    expect(location).toEqual({
+      chunkId: chunk.id,
+      sourceId: source.id,
+      sourceTitle: "paper.pdf",
+      charStart: 0,
+      charEnd: "The cited passage".length,
+      pageNumber: 1,
+      section: "Section 1",
+    });
+  });
+
+  test("findChunkLocation is owner-scoped and undefined for dangling chunks", async () => {
+    const repo = createSourceRepository(database);
+    const alice = owner();
+    const notebook = await notebookFor(alice);
+    const source = await repo.create(alice, {
+      notebookId: notebook.id,
+      type: "text",
+      title: "Pasted",
+      content: "x",
+    });
+    const [chunk] = await repo.replaceChunks(source.id, alice, [
+      chunkInput(0, "chunk"),
+    ]);
+
+    // A stranger resolving the same chunk id sees nothing.
+    expect(await repo.findChunkLocation(chunk.id, owner())).toBeUndefined();
+    // An id that never existed resolves to nothing.
+    expect(await repo.findChunkLocation(crypto.randomUUID(), alice)).toBeUndefined();
+    // Deleting the source cascades its chunks away — the dangling-citation
+    // case a chip must degrade on (A1 design).
+    await repo.delete(source.id, alice);
+    expect(await repo.findChunkLocation(chunk.id, alice)).toBeUndefined();
+  });
+
   test("delete cascades to chunks", async () => {
     const repo = createSourceRepository(database);
     const alice = owner();
