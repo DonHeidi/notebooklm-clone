@@ -66,6 +66,7 @@ lanes need a shared `main`. **Blocks everything.**
 | --- | --- | --- | --- |
 | C1 | `feat/marketing-page` | Marketing site content + design (Astro). | S-0 |
 | C2 | `feat/docs-site` | Docs site seeded with existing product/architecture docs. | S-0 (deploys via B2) |
+| C3 | `feat/legal-pages` | Impressum (§5 DDG) + GDPR privacy page on both static sites (owner-provided data; sites are tracking-free, so the privacy statement is short), footer links. Added 2026-08-18 ahead of the sites going public via B2. | C1, C2 |
 
 ### Lane D — Differentiator (joins mid-week)
 
