@@ -4,15 +4,16 @@ import { ArrowLeft } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
 import { NotebookTitle } from "@/components/notebook-title";
-import { SourcesPanel } from "@/components/sources/sources-panel";
+import { NotebookWorkspace } from "@/components/chat/notebook-workspace";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
+import { loadConversation, toUIMessages } from "@/server/services/chat-service";
 import { getNotebook } from "@/server/services/notebook-service";
 
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// The Chat / Studio panels are placeholders for sessions A4/A5/D2.
+// Sources + Chat are live (A3/A4); the Studio panel is D2/A5's placeholder.
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -24,6 +25,10 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
     notFound();
   }
 
+  // Chat history loads with the workspace (CF-08); citations arrive with
+  // their source context so chips render immediately.
+  const conversation = await loadConversation(notebook.id, user.id);
+
   return (
     <div className="flex h-dvh flex-col">
       <header className="flex shrink-0 items-center gap-3 border-b px-4 py-2">
@@ -32,6 +37,7 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
           size="icon-sm"
           aria-label="Back to library"
           render={<Link href="/" />}
+          nativeButton={false}
         >
           <ArrowLeft />
         </Button>
@@ -47,23 +53,16 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
       </header>
 
       <div className="flex min-h-0 flex-1 gap-3 p-3">
-        <section
-          aria-label="Sources"
-          className="flex w-80 shrink-0 flex-col rounded-xl border bg-card"
+        <NotebookWorkspace
+          notebookId={notebook.id}
+          userId={user.id}
+          initialSources={await listSourcesAction(notebook.id)}
+          initialMessages={toUIMessages(conversation?.messages ?? [])}
         >
-          <h2 className="border-b px-4 py-2.5 text-sm font-medium">Sources</h2>
-          <SourcesPanel
-            notebookId={notebook.id}
-            userId={user.id}
-            initialSources={await listSourcesAction(notebook.id)}
-          />
-        </section>
-        <WorkspacePanel title="Chat" className="flex-1">
-          Grounded chat over your sources is coming in session A4.
-        </WorkspacePanel>
-        <WorkspacePanel title="Studio" className="w-72 shrink-0">
-          Notes and generated artifacts will live here (sessions A5/D2).
-        </WorkspacePanel>
+          <WorkspacePanel title="Studio" className="w-72 shrink-0">
+            Notes and generated artifacts will live here (sessions A5/D2).
+          </WorkspacePanel>
+        </NotebookWorkspace>
       </div>
     </div>
   );

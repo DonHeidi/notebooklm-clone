@@ -30,6 +30,38 @@ export type NewChunkInput = {
   embedding: number[];
 };
 
+// One retrieval hit: everything the chat needs to quote a chunk in the prompt
+// and turn a [n] marker back into a persisted citation (CF-06/07).
+export type RetrievedChunk = {
+  chunkId: string;
+  sourceId: string;
+  sourceTitle: string;
+  text: string;
+  charStart: number;
+  charEnd: number;
+  pageNumber: number | null;
+  section: string | null;
+  score: number;
+};
+
+export type HybridSearchParams = {
+  notebookId: string;
+  ownerId: string;
+  /** Caller-selected source ids — intersected server-side with the notebook's
+   * own ready sources, so foreign or stale ids are silently ignored. */
+  sourceIds: string[];
+  queryEmbedding: number[];
+  queryText: string;
+  limit?: number;
+};
+
+// Reciprocal-rank-fusion constants (Supabase's documented hybrid-search
+// pattern): each modality contributes 1/(RRF_K + rank), equally weighted.
+const RRF_K = 50;
+// Candidates taken per modality before fusion.
+const CANDIDATE_POOL = 30;
+const DEFAULT_LIMIT = 10;
+
 export function createSourceRepository(database: Database) {
   // Correlated subquery tying a sources row to a notebook owned by ownerId;
   // lets single-statement UPDATE/DELETE stay owner-scoped.
@@ -89,6 +121,95 @@ export function createSourceRepository(database: Database) {
       if (deleted.length === 0) {
         throw new NotFoundError("source not found");
       }
+    },
+
+    // Hybrid retrieval (feasibility F-3): pgvector cosine over the HNSW index
+    // fused with Postgres full-text on the generated fts column via
+    // reciprocal rank fusion. Implemented as a Drizzle sql template (not a
+    // database function) so PGlite tests exercise the exact production query
+    // and the logic stays visible in the repository layer.
+    async hybridSearchChunks(
+      params: HybridSearchParams,
+    ): Promise<RetrievedChunk[]> {
+      await assertNotebookOwnership(database, params.notebookId, params.ownerId);
+      if (params.sourceIds.length === 0) {
+        return [];
+      }
+      const limit = params.limit ?? DEFAULT_LIMIT;
+      // pgvector accepts its text representation; bound as a parameter and
+      // cast server-side.
+      const embeddingLiteral = `[${params.queryEmbedding.join(",")}]`;
+      const selectedIds = sql.join(
+        params.sourceIds.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      );
+
+      const query = sql`
+        with allowed_sources as (
+          select s.id, s.title
+          from sources s
+          join notebooks n on n.id = s.notebook_id
+          where n.id = ${params.notebookId}
+            and n.owner_id = ${params.ownerId}
+            and s.status = 'ready'
+            and s.id in (${selectedIds})
+        ),
+        vector_hits as (
+          select c.id,
+            row_number() over (
+              order by c.embedding <=> ${embeddingLiteral}::vector
+            ) as rank
+          from chunks c
+          join allowed_sources a on a.id = c.source_id
+          order by c.embedding <=> ${embeddingLiteral}::vector
+          limit ${CANDIDATE_POOL}
+        ),
+        fts_hits as (
+          select c.id,
+            row_number() over (
+              order by ts_rank_cd(c.fts, websearch_to_tsquery('english', ${params.queryText})) desc
+            ) as rank
+          from chunks c
+          join allowed_sources a on a.id = c.source_id
+          where c.fts @@ websearch_to_tsquery('english', ${params.queryText})
+          limit ${CANDIDATE_POOL}
+        )
+        select
+          c.id as chunk_id,
+          c.source_id,
+          a.title as source_title,
+          c.text,
+          c.char_start,
+          c.char_end,
+          c.page_number,
+          c.section,
+          coalesce(1.0 / (${RRF_K} + v.rank), 0)
+            + coalesce(1.0 / (${RRF_K} + f.rank), 0) as score
+        from vector_hits v
+        full outer join fts_hits f on f.id = v.id
+        join chunks c on c.id = coalesce(v.id, f.id)
+        join allowed_sources a on a.id = c.source_id
+        order by score desc, c.source_id, c.chunk_index
+        limit ${limit}
+      `;
+
+      // db.execute returns rows directly on postgres-js but { rows } on the
+      // PGlite driver used in tests — normalize.
+      const executed = (await database.execute(query)) as
+        | Record<string, unknown>[]
+        | { rows: Record<string, unknown>[] };
+      const rows = Array.isArray(executed) ? executed : executed.rows;
+      return rows.map((row) => ({
+        chunkId: row.chunk_id as string,
+        sourceId: row.source_id as string,
+        sourceTitle: row.source_title as string,
+        text: row.text as string,
+        charStart: Number(row.char_start),
+        charEnd: Number(row.char_end),
+        pageNumber: row.page_number === null ? null : Number(row.page_number),
+        section: (row.section as string | null) ?? null,
+        score: Number(row.score),
+      }));
     },
 
     // Ingestion writes a source's chunks atomically; reprocessing (CF-03)
