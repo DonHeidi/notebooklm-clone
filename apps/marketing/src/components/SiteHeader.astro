@@ -1,13 +1,14 @@
 ---
+// Root-relative anchors so the header also works from subpages (/impressum/…).
 const links = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#audio", label: "Audio overviews" },
-  { href: "#scope", label: "Scope" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#audio", label: "Audio overviews" },
+  { href: "/#scope", label: "Scope" },
 ];
 ---
 
 <header class="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-5 sm:px-8">
-  <a href="#main" class="font-display text-2xl font-medium italic" aria-label="Marginalia — home">
+  <a href="/" class="font-display text-2xl font-medium italic" aria-label="Marginalia — home">
     Marginalia
   </a>
   <nav aria-label="Site">
