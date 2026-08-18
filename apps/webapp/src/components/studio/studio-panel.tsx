@@ -238,14 +238,15 @@ function ArtifactRow({
           />
         )}
         {artifact.status === "failed" && (
-          <Badge
-            variant="destructive"
-            title={artifact.errorMessage ?? undefined}
-          >
-            Failed
-          </Badge>
+          <Badge variant="destructive">Failed</Badge>
         )}
       </div>
+
+      {artifact.status === "failed" && artifact.errorMessage && (
+        // Visible in the row, not tooltip-only — the failure reason tells the
+        // user whether a retry can work.
+        <p className="mt-1 text-xs text-destructive">{artifact.errorMessage}</p>
+      )}
 
       <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
         <span className="flex-1">
