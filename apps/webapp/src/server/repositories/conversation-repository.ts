@@ -1,6 +1,13 @@
 import { and, asc, desc, eq, exists, inArray, sql } from "drizzle-orm";
 import type { Database } from "../db";
-import { citations, conversations, messages, notebooks } from "../db/schema";
+import {
+  chunks,
+  citations,
+  conversations,
+  messages,
+  notebooks,
+  sources,
+} from "../db/schema";
 import { NotFoundError } from "./errors";
 import { assertNotebookOwnership } from "./notebook-access";
 
@@ -22,6 +29,20 @@ export type NewCitationInput = {
 };
 
 export type MessageWithCitations = Message & { citations: Citation[] };
+
+// listMessages enriches each citation with the cited chunk's source context
+// so the UI can rehydrate citation chips (title, location) after a reload.
+// Safe as an inner join: deleting a chunk cascades its citations away.
+export type CitationWithContext = Citation & {
+  sourceId: string;
+  sourceTitle: string;
+  pageNumber: number | null;
+  section: string | null;
+};
+
+export type MessageWithCitationContext = Message & {
+  citations: CitationWithContext[];
+};
 
 export function createConversationRepository(database: Database) {
   async function assertConversationOwnership(
@@ -141,7 +162,7 @@ export function createConversationRepository(database: Database) {
     async listMessages(
       conversationId: string,
       ownerId: string,
-    ): Promise<MessageWithCitations[]> {
+    ): Promise<MessageWithCitationContext[]> {
       await assertConversationOwnership(conversationId, ownerId);
       const messageRows = await database
         .select()
@@ -152,8 +173,16 @@ export function createConversationRepository(database: Database) {
         return [];
       }
       const citationRows = await database
-        .select()
+        .select({
+          citation: citations,
+          sourceId: chunks.sourceId,
+          sourceTitle: sources.title,
+          pageNumber: chunks.pageNumber,
+          section: chunks.section,
+        })
         .from(citations)
+        .innerJoin(chunks, eq(chunks.id, citations.chunkId))
+        .innerJoin(sources, eq(sources.id, chunks.sourceId))
         .where(
           inArray(
             citations.messageId,
@@ -161,9 +190,16 @@ export function createConversationRepository(database: Database) {
           ),
         )
         .orderBy(asc(citations.ordinal));
+      const enriched = citationRows.map((row) => ({
+        ...row.citation,
+        sourceId: row.sourceId,
+        sourceTitle: row.sourceTitle,
+        pageNumber: row.pageNumber,
+        section: row.section,
+      }));
       return messageRows.map((message) => ({
         ...message,
-        citations: citationRows.filter(
+        citations: enriched.filter(
           (citation) => citation.messageId === message.id,
         ),
       }));
