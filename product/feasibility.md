@@ -242,8 +242,8 @@ lives *inside* the adapter, not in the pipeline.
 
 ### D-9 — Database-backed tests run against real Postgres in a local container, replacing PGlite
 
-**Decided with the project owner, 2026-08-18. Not yet implemented — until it
-lands, the interim CI workarounds below stay in place.**
+**Decided with the project owner, 2026-08-18. Implemented 2026-08-18 by
+session A7 (`chore/test-postgres`): both interim CI workarounds are removed.**
 
 The webapp's repository and ingestion-pipeline tests currently run against
 PGlite (`@electric-sql/pglite`, in-process WASM Postgres, built in A1's
@@ -284,9 +284,61 @@ A-lane's surface): the choice between a plain `pgvector/pgvector` image and
 the already-pinned Supabase CLI stack (`supabase start`, whose Postgres ships
 pgvector and matches hosted Supabase closest) is left to that session — the
 repo already pins `supabase` in `mise.toml`, which weighs in favor of the
-Supabase stack. On completion, remove both CI workarounds
-(the exit-99 guard and the raised timeout) and delete this paragraph's
-"not yet implemented" marker.
+Supabase stack.
+
+> **Implementation note (2026-08-18, session A7).** The open choice above
+> was resolved as *both, each where it is strongest*: locally the tests
+> default to the Supabase stack's Postgres (`supabase start` is required for
+> app development anyway, so `bun test` needs zero additional setup); CI
+> provisions a plain `pgvector/pgvector:pg17` service container (~150 MB,
+> ready in seconds) instead of pulling the ~8 GB, 13-container Supabase
+> stack. The split is safe because `createTestDatabase()` creates a fresh
+> per-test-file database and applies the `supabase/migrations` timeline
+> itself on either server — same Postgres 17, same pgvector, same SQL.
+> Isolation is one throwaway database per test file (the moral equivalent of
+> PGlite's throwaway instances); leftovers are swept on the next run. Both
+> CI workarounds (the exit-99 allowlist and `--timeout 30000`) are removed
+> and the plain `bun test` exit-code contract is restored.
+
+### D-10 — Scaleway as the platform, a deliberate deviation from the target company's AWS
+
+**Owner decision, recorded 2026-08-18 (session C6; the decision itself
+predates the project — Scaleway was a declared parameter of this study, see
+the Question header above — and the rationale was stated by the owner for
+the roadmap's C6 row).**
+
+The company this challenge is for works with AWS. Using Scaleway is a
+deliberate deviation from that context. The owner's rationale: Scaleway is
+more cost-effective and carries less organisational overhead; and the
+building blocks are deliberately interchangeable — provisioning on AWS is
+straightforwardly accomplishable without a migration headache.
+
+The interchangeability claim, substantiated against the actual code and
+workflows as merged:
+
+| Building block (as built) | AWS equivalent | What actually changes |
+| --- | --- | --- |
+| Scaleway Serverless Containers running the D-1 standalone Docker image (`apps/webapp/Dockerfile` — nothing Scaleway-specific in it) | App Runner / ECS Fargate | The image is unchanged; only where it runs |
+| Object storage: Scaleway is **S3-compatible** — `deploy-static-sites.yml` already drives it with `aws s3 sync` and AWS-named credentials against a Scaleway endpoint | Native S3 (+ CloudFront where Edge Services would have been, B3) | Drop `--endpoint-url`, swap credentials and bucket names; bucket-website config → S3 static website hosting |
+| Terraform state: `backend "s3"` against Scaleway with four `skip_*` compatibility flags and **no locking** (`infrastructure/versions.tf`) | Native S3 backend | The `skip_*` flags drop; state locking (S3 lockfile / DynamoDB) becomes available — an *improvement* over the current no-locking caveat |
+| Container registry `rg.fr-par.scw.cloud` | ECR | Login/push lines in `deploy-webapp.yml` |
+| The one Scaleway-proprietary workflow touch: the Containers API PATCH + rollout wait in `deploy-webapp.yml` (43 lines) | The equivalent App Runner deploy step | This section is rewritten; the build/push/smoke-test steps around it stay |
+| LLM + embeddings via `@ai-sdk/openai-compatible` (D-4, NF-16) | AI SDK Bedrock provider — a provider-package swap, not a rewrite — or any OpenAI-compatible endpoint | Config + provider package; see caveat below |
+| Platform-independent, moves not at all | — | Supabase (its own vendor, not Scaleway), Azure Speech (already multi-cloud by D-8), GitHub Actions, the entire application code |
+
+**Honest caveats — the claim is "no migration headache", not "zero work":**
+
+- The Terraform layer is a **rewrite, not a copy**: 8 `scaleway_*` resources
+  across ~170 lines of `infrastructure/*.tf` become their `aws_*`
+  equivalents. Small surface, but every resource is re-authored.
+- Changing the embedding model (Bedrock hosts different models than
+  Scaleway's `qwen3-embedding-8b`) means **re-embedding the corpus** and
+  revisiting the `vector(2000)` column decision — the abstraction swaps the
+  API cleanly, but stored vectors are model-specific.
+- Costs, free tiers, and limits differ; the running-cost table above is
+  Scaleway-specific and would need redoing.
+- Scaleway model EOL churn (D-4 caveat) is traded for AWS's own model
+  lifecycle; neither is churn-free.
 
 ## Architecture (resulting shape)
 
@@ -327,8 +379,9 @@ observed in the real product (`product/ui-research.md` §4).
 | Supabase Queues (pgmq) GA label unconfirmed | Low | Launched 2024-12, dashboard-integrated; acceptable for prototype |
 | Generative-APIs model EOL rotation; org-level rate limits need payment method on file | Low | Loose model pinning behind D-4 abstraction; register payment method |
 | `bun test` lacks `--filter`/globs; `mock.module` scoping bugs | Low | Root `bun test` sweeps workspaces; avoid module-mock-heavy test design |
-| PGlite under Bun: exit 99 with 0 failures; cold WASM init blows the 5 s hook timeout on CI runners (found in B2) | Medium | **D-9 decided 2026-08-18**: move DB-backed tests to real Postgres in a local container. Interim: CI allowlists the exact exit-99 signature and runs `--timeout 30000` — both removed when D-9 lands |
+| PGlite under Bun: exit 99 with 0 failures; cold WASM init blows the 5 s hook timeout on CI runners (found in B2) | ~~Medium~~ **Resolved** | **D-9 implemented 2026-08-18 (session A7)**: DB-backed tests run on real Postgres + pgvector (local Supabase stack / CI service container); PGlite removed, both interim CI workarounds removed |
 | Local pgvector version may differ from hosted (0.8 features: iterative scans) | ~~Low~~ **Resolved** | **B3 verified 2026-08-18:** hosted (`ahphkkvsofqmxkqzbica`) and local both run pgvector **0.8.2** on Postgres 17 — no feature gap |
+
 | Azure TTS (D-8) chosen on docs only — German/English voice quality never auditioned (no API key in spike D1) | Medium | First step of D2: create an F0 key, audition `de-DE-Seraphina/Florian/Katja` + en-US candidates before wiring the pipeline; runner-up ElevenLabs and self-host fallback stand ready behind the `TtsProvider` interface |
 | Azure DragonHD voices unavailable in Germany West Central (West Europe / Sweden Central only); voice catalog churns | Low | Standard neural voices suffice for MVP and exist in all three EU regions; pin `westeurope`; churn absorbed by the D-8 abstraction |
 

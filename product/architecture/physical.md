@@ -12,6 +12,21 @@
 > **Update (2026-08-18, session B3):** both of the above are now real — see
 > *Hosted Supabase (B3)* at the end of this document.
 
+> **Extended 2026-08-18** (session C6): "Platform choice" section added,
+> referencing decision D-10.
+
+## Platform choice
+
+The target company works with AWS; running on Scaleway is a deliberate,
+owner-decided deviation — more cost-effective, less organisational
+overhead, and every building block on this page is deliberately
+interchangeable (the same Docker image, S3-compatible storage driven by
+`aws s3 sync`, an s3 Terraform backend, the D-4 provider abstraction).
+The decision, a per-building-block AWS interchange map verified against
+the code and workflows, and its honest caveats are recorded as **D-10**
+in `product/feasibility.md`.
+
+
 ## Topology
 
 ![UML deployment diagram: users reach the Scaleway serverless container (Next.js standalone on Node 24) and the object-storage website buckets over HTTPS, and upload files directly to Supabase Storage; the container talks to Supabase (auth, pooled SQL, storage), the Scaleway Generative APIs, and — pending D2 — Azure AI Speech; GitHub Actions pushes images to the registry and syncs the static-site buckets; the tfstate bucket is Terraform's S3 backend.](assets/physical-topology.svg)

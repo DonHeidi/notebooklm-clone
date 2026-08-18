@@ -1,0 +1,14 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../layouts/DocPage.astro";
+
+const entry = await getEntry("product", "faq");
+if (!entry) throw new Error("product/faq.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/faq.md"
+  title="FAQ — Marginalia Docs"
+  description="Quick answers to anticipated reviewer questions, each linking into the document that carries the full story."
+/>

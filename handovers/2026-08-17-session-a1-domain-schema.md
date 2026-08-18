@@ -46,6 +46,11 @@ messages, citations, and notes. Replaces the scaffold's placeholder
   Postgres with pgvector) migrated with the actual generated SQL — so tests
   validate the migrations, the generated tsvector, cascades, and the
   owner-scoping of every method, with no live database.
+  > **Annotation (2026-08-18, session A7, D-9):** PGlite was later retired
+  > (exit-99 under Bun, cold-init timeouts — found by B2);
+  > `createTestDatabase()` now targets a real Postgres + pgvector with the
+  > same signature and the same apply-the-real-migrations property. See
+  > `product/feasibility.md` D-9.
 
 ## Decisions
 

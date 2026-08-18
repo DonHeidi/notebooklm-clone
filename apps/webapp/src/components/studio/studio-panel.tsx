@@ -173,11 +173,16 @@ function ArtifactRow({
 
   // The signed URL is short-lived, so it is fetched when the user hits play
   // (and dropped again when the artifact regenerates).
-  useEffect(() => {
+  // Drop the stale signed URL the moment a regeneration starts —
+  // render-time adjustment instead of a sync setState in an effect
+  // (react-hooks/set-state-in-effect).
+  const [wasGenerating, setWasGenerating] = useState(generating);
+  if (generating !== wasGenerating) {
+    setWasGenerating(generating);
     if (generating) {
       setAudioUrl(null);
     }
-  }, [generating]);
+  }
 
   async function play() {
     setBusy(true);
@@ -282,9 +287,8 @@ function ArtifactRow({
 
       {artifact.status === "ready" &&
         (audioUrl ? (
-          // eslint-disable-next-line jsx-a11y/media-has-caption -- generated
-          // speech; the source script is not persisted yet (transcript is a
-          // known follow-up).
+          // Generated speech without captions; the source script is not
+          // persisted yet (transcript is a known follow-up, NF-11).
           <audio
             controls
             autoPlay

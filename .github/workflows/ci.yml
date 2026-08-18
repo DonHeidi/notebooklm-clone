@@ -20,11 +20,30 @@ jobs:
   checks:
     name: lint · typecheck · test · build
     runs-on: ubuntu-latest
+    services:
+      # DB-backed tests run against real Postgres + pgvector (feasibility
+      # D-9). A plain pgvector image instead of the full `supabase start`
+      # stack: one ~150 MB pull vs ~8 GB across 13 containers, and the tests
+      # apply the supabase/migrations timeline themselves either way. pg17
+      # matches supabase/config.toml major_version. The credentials are
+      # throwaway (container dies with the job, never reachable externally).
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       # Build-time placeholders (see header comment) — not real endpoints.
       NEXT_PUBLIC_SUPABASE_URL: https://ci-build-placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-build-placeholder-anon-key
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:54329/postgres
     steps:
       - uses: actions/checkout@v7
 
@@ -45,32 +64,7 @@ jobs:
           node_modules/.bin/tsc --noEmit
 
       - name: Test
-        # Known quirk (B2, 2026-08-18): any test that instantiates PGlite makes
-        # the Bun process exit 99 even when every test passes — the identical
-        # code exits 0 under Node, and closing the client doesn't help
-        # (Bun 1.3.14 + @electric-sql/pglite 0.5.5, both current). Until
-        # upstream fixes it, accept EXACTLY that signature: exit code 99 with
-        # a "0 fail" summary. Any other nonzero exit still fails the job
-        # (bun test's exit code is the failure count, so 99 real failures
-        # would print "99 fail" and not match).
-        # --timeout 30000: the first PGlite instantiation (WASM compile) can
-        # exceed bun's default 5 s per-test/hook timeout on slow CI runners,
-        # failing a repository test file's beforeAll as "(unnamed)".
-        #
-        # Both workarounds are INTERIM: decision D-9 (product/feasibility.md,
-        # 2026-08-18) moves DB-backed tests to a real Postgres container —
-        # remove the exit-99 guard and the raised timeout when that lands.
-        run: |
-          set +e
-          bun test --timeout 30000 2>&1 | tee bun-test.log
-          code=${PIPESTATUS[0]}
-          set -e
-          if [ "$code" = "0" ]; then exit 0; fi
-          if [ "$code" = "99" ] && grep -qE ' 0 fail' bun-test.log; then
-            echo "::warning::bun test exited 99 with 0 failures (PGlite/Bun quirk) — treated as pass"
-            exit 0
-          fi
-          exit "$code"
+        run: bun test
 
       - name: Build all apps
         run: bun run build
