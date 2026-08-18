@@ -6,6 +6,11 @@ terraform {
       source  = "scaleway/scaleway"
       version = "~> 2.81"
     }
+    # Zips the apex-redirect function sources (domain.tf).
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.8"
+    }
   }
 
   # Remote state on Scaleway Object Storage (migrated in session B2; the
