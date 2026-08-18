@@ -124,9 +124,10 @@ bucket (session B4, PR
   `product/scope.md` (36 status badges + summary table) render through the
   existing product collection, blockquotes appearing as styled callouts —
   verified in the built output.
-- **2026-08-18 — History/architecture catch-up, session C8** (this page's
-  own section; PR number cited in the session's handover,
-  `handovers/2026-08-18-session-c8-history-latest.md`). Docs-app change:
+- **2026-08-18 — History/architecture catch-up, session C8**
+  (PR [#54](https://github.com/DonHeidi/notebooklm-clone/pull/54);
+  handover `handovers/2026-08-18-session-c8-history-latest.md`). Docs-app
+  change:
   the sidebar became independently scrollable (owner request
   mid-session) — the sticky nav gets its own `max-height` + `overflow-y`,
   so long navigation no longer requires scrolling the whole page.

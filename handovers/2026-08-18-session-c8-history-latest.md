@@ -84,9 +84,10 @@ None — no dependencies added, `bun.lock`/root `package.json`/root
 
 ## Open items / next sessions
 
-- The PR number for C8's own entry in `product/history/docs.md` is cited
-  via this handover (C4 precedent: its PR number was added by a follow-up
-  commit once known).
+- This session's PR is
+  [#54](https://github.com/DonHeidi/notebooklm-clone/pull/54); the number
+  was added to `product/history/docs.md`'s C8 entry by a follow-up commit
+  once known (C4 precedent).
 - The appending-contract finding (process.md): consider adding "history
   pages appended?" to the foreman's per-PR review checklist.
 - `product/history/marketing.md` gained one dated update (no
