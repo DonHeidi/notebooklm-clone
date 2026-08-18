@@ -71,6 +71,7 @@ lanes need a shared `main`. **Blocks everything.**
 | C4 | `feat/project-history` | Per-package project history as canonical markdown in `product/history/` (one file per workspace: decisions, results, problems + resolutions, sourced from PRs/handovers/feasibility), rendered as a History section in the docs app. Added 2026-08-18. | C2, all merged sessions as source material |
 | C5 | `feat/architecture-views` | 4+1 architectural view model (Kruchten) as canonical docs in `product/architecture/` (logical, process, development, physical views + scenarios), rendered by the docs app. Added 2026-08-18. | C2; describes state incl. A4 |
 | C6 | `docs/architecture-rationale` | Dependency overview + per-dependency rationale in the development view; platform rationale as feasibility **D-10** (owner decision: Scaleway over the company's AWS — cost + lower organisational overhead — with an AWS interchange map showing provider-swap migration), referenced from the physical view; plus a FAQ (`product/faq.md`) in the docs Start section answering anticipated reviewer questions with links into the deep docs. Added 2026-08-18, FAQ added same day. | C5 |
+| C7 | `docs/scope-status` | Implementation-status annotations on `product/scope.md`: dated badge per CF/SF item (in current version / partial / planned / cut, with shipping PR) + summary table at top; adopted scope text itself unchanged. Added 2026-08-18. | B3 merged (status reflects the deployed version) |
 
 ### Lane D — Differentiator (joins mid-week)
 
