@@ -14,6 +14,12 @@
 > (D2/A6), the development view's test setup and providers (A7/B4/B5), and
 > the physical view's hosted, custom-domained, Terraform-managed platform
 > (B3/B4/B5). The full chronological record is `product/history/`.
+>
+> **Update (2026-08-18, session C9):** a sixth page joins the set — the
+> **generative view** (`generative.md`), a deliberate extension of the 4+1
+> model answering what no canonical view does: which AI model is invoked
+> where, triggered by what, for what purpose, and bounded by which guard —
+> including the RAG pipeline end to end.
 
 Kruchten's 4+1 model describes a software architecture through four
 complementary views — logical (the domain model), process (runtime dynamics),
@@ -21,7 +27,7 @@ development (code organization), physical (deployment topology) — plus one
 set of scenarios that walks concrete use cases through all four. These pages
 apply that model to Marginalia, the NotebookLM clone this repository builds.
 
-## How the five pages map to this repository
+## How the pages map to this repository
 
 | View | Page | Primary sources of truth |
 | --- | --- | --- |
@@ -30,6 +36,7 @@ apply that model to Marginalia, the NotebookLM clone this repository builds.
 | Development | `product/architecture/development.md` | The `AGENTS.md` files, `.github/workflows/ci.yml`, the toolchain configs |
 | Physical | `product/architecture/physical.md` | `infrastructure/*.tf`, `apps/webapp/Dockerfile`, the deploy workflows |
 | Scenarios (+1) | `product/architecture/scenarios.md` | The A3/A4 handovers' end-to-end verification records |
+| Generative (extension) | `product/architecture/generative.md` | `apps/webapp/src/server/ai/`, `src/server/audio/`, the chat/ingestion/audio services, `.env.schema` |
 
 ## Sourcing discipline
 

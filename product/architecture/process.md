@@ -32,6 +32,10 @@ The product's defining loop (CF-05/06/07), end to end
 What gets persisted is **what the user actually saw** — full or
 stopped-early — so a reload matches the transcript.
 
+*The model's-eye version of this sequence — which models are called at
+each step, with the retrieval tuning values and the no-spend paths — is in
+the [generative view](../architecture/generative.md) (added 2026-08-18, session C9).*
+
 **Documented stop/abort limitation** (A4 gotcha, verified with
 instrumentation; comment in the route): behind the Next proxy, a mid-stream
 client disconnect does **not** fire `request.signal` promptly. The UI-level
