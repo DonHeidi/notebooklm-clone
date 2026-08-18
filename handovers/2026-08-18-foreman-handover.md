@@ -109,3 +109,10 @@ min-scale 0, F0 Azure).
 > the owner chose to **adopt** the Supabase Terraform provider. Roadmap row B5
 > added in the same PR as this note; brief issued (import-only, zero-diff plan
 > gate, `prevent_destroy`). The D2 Azure-Speech analog remains undecided.
+
+> **Correction (2026-08-18, session C11 per correct-the-record):** the
+> "~$300 total through day 2" cost estimate above is superseded by the
+> computed figure in `product/in-numbers.md`: **≈ $854 API-equivalent**
+> across all 28 transcripts (≈ $700 for just the sessions finished by this
+> handover's own cutoff time). The "foreman ≈ 40%" share held up almost
+> exactly (coordination = 40.1% of computed spend).
