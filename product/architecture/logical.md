@@ -14,29 +14,9 @@ Everything hangs off the notebook, which belongs to exactly one owner. The
 implemented model is the Phase 1 subset of the ideal in `product/scope.md`
 §10:
 
-```
-auth.users (Supabase-managed; never modeled in Drizzle)
-   │  owner_id (no FK — auth schema is out of bounds, schema.ts)
-   ▼
-notebooks ──────────────────────────────────────────────────┐
-   │                                                        │
-   ├──► sources (type: file|text|url;                       │
-   │      │      status: pending|processing|ready|failed)   │
-   │      │  cascade                                        │
-   │      └──► chunks (text, embedding vector(2000),        │
-   │              fts tsvector generated, char offsets,     │
-   │              page number)                              │
-   │                    ▲                                   │
-   ├──► conversations   │ chunk_id (cascade)                │
-   │      │  cascade    │                                   │
-   │      └──► messages (role: user|assistant)              │
-   │             │  cascade                                 │
-   │             └──► citations (ordinal, quote)────┘       │
-   │                    ▲                                   │
-   └──► notes ──────────┘ source_message_id                 │
-          (on delete: set null — a saved answer      cascade┘
-           survives as a plain note)
-```
+![UML class diagram of the notebook aggregate: notebooks (owned by auth.users via owner_id, no FK) compose sources, conversations, and notes; sources compose chunks; conversations compose messages, which compose citations; citations reference chunks; notes optionally reference messages via source_message_id with on-delete set-null.](assets/logical-domain-model.svg)
+
+*Diagram source: `product/architecture/diagrams/logical-domain-model.puml`.*
 
 All child tables cascade on notebook deletion (CF-01 "delete notebook
 removes associated data"). Deleting a source cascades through its chunks to

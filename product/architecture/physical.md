@@ -11,37 +11,9 @@
 
 ## Topology
 
-```
-                         users / browser
-                     │                    │
-            HTTPS    │                    │  HTTPS (default bucket
-                     ▼                    ▼   website endpoints)
-     ┌───────────────────────────┐   ┌──────────────────────────────┐
-     │ Scaleway Serverless        │   │ Scaleway Object Storage      │
-     │ Container  fr-par          │   │   marginalia-docs (website)  │
-     │  marginalia-webapp         │   │   marginalia-marketing (")   │
-     │  Node 24 standalone (D-1)  │   │   marginalia-tfstate         │
-     │  1 vCPU / 2 GB, port 3000  │   │     (versioned; S3 backend   │
-     │  min 0 / max 2, HTTPS only │   │      for terraform state)    │
-     │  SSE verified (D-7 / S-1)  │   └──────────────────────────────┘
-     └────────┬──────────┬────────┘
-              │          │            ┌──────────────────────────────┐
-              │          └──────────► │ Scaleway Generative APIs     │
-   image pull │  chat + embeddings    │  api.scaleway.ai/<project>/v1│
-              │  (OpenAI-compatible,  │  (D-4; EU, zero retention)   │
-              │   D-4)                └──────────────────────────────┘
-   ┌──────────┴───────────┐
-   │ Scaleway Registry    │           ┌──────────────────────────────┐
-   │  rg.fr-par…/         │           │ Supabase                     │
-   │  marginalia/webapp   │           │  auth (JWT/cookie sessions)  │
-   └──────────────────────┘           │  Postgres + pgvector (HNSW)  │
-                                      │  Storage (sources bucket,    │
-   ┌──────────────────────┐           │   RLS, direct browser        │
-   │ Azure AI Speech      │           │   uploads — D-5)             │
-   │  westeurope (D-8)    │           │  LOCAL stack today;          │
-   │  PENDING — D2 wiring │           │  hosted project = B3 pending │
-   └──────────────────────┘           └──────────────────────────────┘
-```
+![UML deployment diagram: users reach the Scaleway serverless container (Next.js standalone on Node 24) and the object-storage website buckets over HTTPS, and upload files directly to Supabase Storage; the container talks to Supabase (auth, pooled SQL, storage), the Scaleway Generative APIs, and — pending D2 — Azure AI Speech; GitHub Actions pushes images to the registry and syncs the static-site buckets; the tfstate bucket is Terraform's S3 backend.](assets/physical-topology.svg)
+
+*Diagram source: `product/architecture/diagrams/physical-topology.puml`.*
 
 Key verified properties:
 
@@ -90,21 +62,11 @@ Services / custom domains are B3.
 Declared once, resolved per environment; values never committed
 (SEC-6, `product/security.md`):
 
-```
-.env.schema (committed — declares every variable, marks sensitivity)
-    │
-    ├── developers: Proton Pass ──pass-cli──► untracked .env.local
-    │               (all commands via `bunx varlock run --`)
-    │
-    ├── CI/deploys: GitHub Actions secrets (set via `gh secret set`,
-    │               never echoed) ──► build args / API tokens
-    │               NEXT_PUBLIC_* are build-time and inlined into the
-    │               client bundle (publishable, not secret)
-    │
-    └── runtime:    scaleway_container secret_environment_variables
-                    (SCW_GENERATIVE_APIS_KEY; Supabase server keys join
-                     when B3 points the container at a hosted project)
-```
+![UML component diagram of the secrets flow: the committed .env.schema declares every variable; Proton Pass is the store, resolved by developers into the untracked .env.local (validated by varlock) and injected into GitHub Actions secrets for CI, which feed NEXT_PUBLIC build args into the client bundle and API tokens into the container's secret environment variables.](assets/physical-secrets-flow.svg)
+
+*Diagram source: `product/architecture/diagrams/physical-secrets-flow.puml`.
+When B3 points the container at a hosted Supabase project, its server keys
+join the container's secret environment variables.*
 
 The schema also already declares the D2 surface (`TTS_PROVIDER`,
 `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` — D-8), ahead of the in-flight

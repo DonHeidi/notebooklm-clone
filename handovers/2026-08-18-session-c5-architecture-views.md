@@ -41,34 +41,51 @@ Roadmap lane C, session C5.
 
 ## Decisions
 
-- **Diagrams: hand-authored ASCII in fenced code blocks.** The site's hard
-  constraint is zero external runtime requests and no client-side JS;
-  build-time mermaid (`rehype-mermaid`) needs a headless-browser
-  dependency (playwright) — rejected. ASCII matches the existing
-  convention (`product/feasibility.md`'s architecture diagram renders on
-  `/decisions/` already), costs zero dependencies (no `bun.lock` touch),
-  and stays readable in the raw markdown, which is itself canonical.
-  Trade-off accepted: less visual polish than SVG; diagrams kept ≤ ~78
-  chars wide, and on mobile they scroll inside their own code block
-  (verified by screenshot).
+- **Diagrams: UML via PlantUML, rendered to committed SVGs** (revised
+  during the session on owner review — the first iteration used
+  hand-authored ASCII; the owner directed UML instead). The `.puml`
+  sources are canonical in `product/architecture/diagrams/` (class,
+  sequence ×2, component ×2, deployment, use-case); committed SVGs in
+  `product/architecture/assets/` are the rendered artifacts, regenerated
+  by `diagrams/render.sh` using the **official PlantUML Docker image**
+  (bundles Java + Graphviz — so neither joins `mise.toml` or CI, and
+  Docker is already a project requirement for `supabase start`; mise has
+  no plantuml registry entry, which ruled out pinning it there).
+  Rendering is commit-time, never build/page-load time: the docs site
+  stays free of client-side rendering and external requests (the SVGs
+  contain only W3C namespace identifiers, verified by grep), and the
+  images render on GitHub too. Client-side mermaid.js and
+  `rehype-mermaid` (headless-browser dependency) stayed rejected.
+  Wide-diagram lesson: graphviz spreads deployment diagrams
+  horizontally — the topology needed coarser artifact granularity +
+  hidden layout edges to fit the docs column (1854 → 1432 px).
+- **`image.service: passthroughImageService()`** in
+  `apps/docs/astro.config.mjs`: Astro's content-layer markdown images
+  otherwise invoke the default sharp service, which is not installed
+  (build failed) — and the only images are pre-rendered SVGs needing no
+  raster transforms, so passthrough avoids a native dependency.
 - **`/architecture/` renders `index.md` instead of an app-authored
   overview** — the brief made the index canonical content, so the
   render-don't-copy rule applies to it too.
 
 ## Verified
 
-- `bun run build` in `apps/docs`: passes, **33 pages** (27 before in this
-  tree + 6 new: `/architecture/` + five views; the new handover adds its
-  own session page on the next build).
+- `bun run build` in `apps/docs`: passes, **34 pages** (6 new
+  architecture pages + this handover's own session page).
 - External-request grep over `dist/`: unchanged — no external
   `<script src>`, `<link href>`, or `url(http…)`; the only absolute URLs
   are content anchors (github.com PR links, the deployed-site URLs inside
-  rendered handovers, the scaleway.com link in the legal pages).
+  rendered handovers, the scaleway.com link in the legal pages). The
+  committed SVGs contain no external references either (only W3C
+  namespace identifiers).
+- Astro resolves the markdown-relative `assets/*.svg` paths from the
+  glob-loaded collection: images are hashed into `dist/_astro/` with
+  width/height and the alt text preserved.
 - `bun test` from the worktree root: **80 pass, 0 fail**.
 - Screenshots (headless Chromium, C4's fallback path):
   `handovers/assets/2026-08-18-c5-index.png` (overview, 1440),
-  `…-c5-logical.png` (logical view incl. aggregate diagram, 1440),
-  `…-c5-physical-mobile.png` (physical view, 390 — code-block scroll OK).
+  `…-c5-logical.png` (logical view incl. the class diagram, 1440),
+  `…-c5-physical-mobile.png` (physical view, 390).
 
 ## Hot files
 

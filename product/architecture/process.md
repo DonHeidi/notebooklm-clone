@@ -13,34 +13,9 @@
 The product's defining loop (CF-05/06/07), end to end
 (`apps/webapp/src/app/notebooks/[id]/chat/route.ts`):
 
-```
-browser ── POST /notebooks/[id]/chat  {messages, selectedSourceIds}
-   │
-   ▼
-proxy.ts            refresh session (getClaims), optimistic redirect only
-   ▼
-route handler       verified JWT?          ──no──► 401
-                    owner's notebook?      ──no──► 404
-                    valid last user msg?   ──no──► 400
-   ▼
-prepareGrounding    BEFORE the stream opens, so provider failures
- (chat-service.ts)  are a readable 502, not a broken stream:
-                      0 sources selected ──► zero-source prompt, skip retrieval
-                      else: embed(question) ──► hybridSearchChunks (top 10)
-                            ──► delimited system prompt (SEC-3)
-   ▼
-persist user message
-   ▼
-streamText          Scaleway Generative APIs (D-4), last 12 messages
-   │                (CHAT_HISTORY_WINDOW) as context, no tools
-   ▼
-UIMessage stream    text-delta parts as tokens arrive (SSE)
-   │                + one data-citation part at the FIRST occurrence
-   │                  of each valid [n] marker in the accumulated text
-   ▼
-on finish           persist assistant message + citations
-                    transactionally (appendMessage)
-```
+![UML sequence diagram of the grounded-chat request: browser POSTs to the chat route through proxy.ts (JWT verify/refresh); the route validates auth, ownership, and input; prepareGrounding either skips retrieval (zero sources) or embeds the question and runs hybridSearchChunks in one scoped SQL statement; the user message persists; streamText streams token deltas and data-citation parts to the browser over SSE; on finish the assistant message and citations persist transactionally.](assets/process-grounded-chat.svg)
+
+*Diagram source: `product/architecture/diagrams/process-grounded-chat.puml`.*
 
 What gets persisted is **what the user actually saw** — full or
 stopped-early — so a reload matches the transcript.
@@ -68,37 +43,11 @@ state is the `sources.status` column from day one — no queue, no worker
 (yet; stage 2 moves the same code into a Scaleway Serverless Job without
 touching schema or UI).
 
-```
-add-source dialog (file upload goes browser ──► Supabase Storage first, D-5;
-   │               the action receives only the storage path)
-   ▼
-server action (sources/actions.ts)  requireUser() ──► create source row
-   │                                (status: pending) ──► return immediately
-   └─ after() ───► ingestSource()   (ingestion-service.ts, never throws)
-                      │  status: processing
-                      ▼
-                   extract    file: Storage download (service-role client —
-                      │       after() runs outside the request's cookie
-                      │       context; app-layer ownership checks gate it)
-                      │       ──► PDF (unpdf, per-page) | UTF-8 text
-                      │       url: SSRF-guarded fetch (SEC-1) ──► Readability
-                      │       text: stored content as-is
-                      ▼
-                   guards     20 MB/file · 200k words/source (post-parse)
-                      ▼       · 50 sources/notebook (limits.ts, NF-15)
-                   chunk      ~400-token chunks, 40 overlap, exact char
-                      ▼       offsets; PDFs chunked per page (chunking.ts)
-                   embed      batched, order-preserving; 2000 dims asserted
-                      ▼       (embeddings.ts)
-                   persist    content + replaceChunks (atomic) ──►
-                              status: ready
-                   on error   status: failed + truncated user-readable
-                              errorMessage (no stacks)
+![UML sequence diagram of the ingestion pipeline: the browser uploads the file directly to Supabase Storage, then calls the server action, which creates a pending source row and returns immediately while after() detaches ingestSource; the pipeline sets status processing, downloads via the service-role client, parses, applies the size guards, chunks with exact offsets, embeds in batches, writes content and chunks atomically, and sets status ready — any failure sets status failed with a user-readable message; the browser polls the source list every 2.5 seconds only while a source is pending or processing.](assets/process-ingestion.svg)
 
-browser ◄── 2.5 s poll of the source list, ONLY while a source is
-            pending/processing (A3 decision: polling over Realtime —
-            fewer moving parts at in-process durations; revisit at stage 2)
-```
+*Diagram source: `product/architecture/diagrams/process-ingestion.puml`. The
+2.5 s polling (over Realtime) is an A3 decision — fewer moving parts at
+in-process durations; revisit at stage 2.*
 
 ## Session refresh (proxy)
 

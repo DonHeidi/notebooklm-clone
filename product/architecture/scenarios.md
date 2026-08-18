@@ -9,28 +9,30 @@
 > [PR #24](https://github.com/DonHeidi/notebooklm-clone/pull/24)), run
 > against a local Supabase stack and the real Scaleway Generative APIs.
 
+![UML use-case diagram: the user performs four use cases against Marginalia — add a PDF and watch it become chunks, ask a grounded question and follow a citation, sign up and log in, and ask with zero sources selected — each annotated with the architectural views it exercises.](assets/scenarios-use-cases.svg)
+
+*Diagram source: `product/architecture/diagrams/scenarios-use-cases.puml`.
+The two process-view sequence diagrams (`process-ingestion.puml`,
+`process-grounded-chat.puml`) are the detailed traces behind S1 and S2.*
+
 ## S1 — Add a PDF and watch it become chunks
 
 *What A3 verified:* the 15-page arXiv paper 1706.03762 ("Attention Is All
 You Need"), uploaded through the browser.
 
-```
-add-sources dialog ──► browser uploads the PDF DIRECTLY to Supabase
-                       Storage under <userId>/<uuid>/<filename>  (D-5)
-        │
-        ▼
-addFileSourceAction    requireUser() → 20 MB / 50-source guards →
-                       source row (status: pending) → returns at once,
-                       after() detaches ingestSource()
-        │
-        ▼
-pipeline               processing → download (service-role) → unpdf
-                       per-page parse → per-page chunking → batched
-                       embeddings (2000 dims) → replaceChunks → ready
-        │
-        ▼
-sources panel          2.5 s poll shows the spinner, then the Ready state
-```
+1. From the add-sources dialog, the browser uploads the PDF **directly** to
+   Supabase Storage under `<userId>/<uuid>/<filename>` (D-5).
+2. `addFileSourceAction` runs `requireUser()` and the 20 MB / 50-source
+   guards, creates the source row (status `pending`), and returns at once —
+   `after()` detaches `ingestSource()`.
+3. The pipeline flips the status to `processing`, downloads the bytes
+   (service-role client), parses per page with unpdf, chunks per page,
+   embeds in batches (2000 dims asserted), writes the chunks atomically
+   via `replaceChunks`, and sets `ready`.
+4. The sources panel's 2.5 s poll shows the spinner, then the Ready state.
+
+(The full interaction is the `process-ingestion.puml` sequence diagram in
+the process view.)
 
 **Recorded outcome:** status `ready`, **35 chunks** with `page_number`
 1–15; across the session's whole corpus, 90/90 chunks satisfied
@@ -49,22 +51,19 @@ fakes).
 *What A4 verified:* "What writing system developed in Mesopotamia…?"
 against an ingested Wikipedia source.
 
-```
-select sources ──► POST /notebooks/[id]/chat
-        │
-        ▼
-retrieval          embed(question) → hybridSearchChunks (HNSW + fts,
-                   RRF-fused, restricted to the selected ready sources)
-        │
-        ▼
-streamText         answer streams token-by-token (SSE); at the first
-                   "[1]" a data-citation part streams alongside, and the
-                   chip renders with title/location tooltip
-        │
-        ▼
-persistence        assistant message + citations rows (ordinal, quote)
-                   in one transaction
-```
+1. The user selects sources; the browser POSTs to
+   `/notebooks/[id]/chat`.
+2. Retrieval: the question is embedded, then `hybridSearchChunks` runs
+   (HNSW + full-text, RRF-fused), restricted to the selected ready
+   sources.
+3. `streamText` streams the answer token-by-token over SSE; at the first
+   `[1]` a `data-citation` part streams alongside and the chip renders
+   with its title/location tooltip.
+4. On finish, the assistant message and its citations rows
+   (ordinal, quote) persist in one transaction.
+
+(The full interaction is the `process-grounded-chat.puml` sequence diagram
+in the process view.)
 
 **Recorded outcome:** a streamed markdown answer citing `[1]`/`[7]`; SQL
 showed citations rows whose ordinal and quote resolved to real Mesopotamia
@@ -84,19 +83,13 @@ extraction are unit-tested modules).
 
 *What A2/A4 and the deploy smoke test verify.*
 
-```
-/signup form ──► signUp server action ──► supabase.auth.signUp
-        │            (cookies written by @supabase/ssr)
-        ▼
-redirect to /  (library page; requireUser() re-validates)
-        │
-   … later requests …
-        ▼
-proxy.ts       getClaims() verifies + refreshes the JWT, rotates
-               cookies; unauthenticated hits on protected paths
-               redirect to /login (optimistic only — every action and
-               route re-checks via requireUser())
-```
+1. The `/signup` form submits to the `signUp` server action, which calls
+   `supabase.auth.signUp`; `@supabase/ssr` writes the session cookies.
+2. Redirect to `/` (the library page), where `requireUser()` re-validates.
+3. On every later request, `proxy.ts` runs `getClaims()` — verifying and
+   refreshing the JWT, rotating cookies; unauthenticated hits on protected
+   paths redirect to `/login`. The redirect is optimistic only — every
+   action and route re-checks via `requireUser()`.
 
 **Recorded outcome:** A4's route-guard checks by direct fetch:
 unauthenticated → 307 to login (the chat handler itself returns 401), a
@@ -114,16 +107,12 @@ development (route-access rules are a pure, tested module).
 *What A4 verified:* all sources unchecked ("0 sources"), a question about
 the Hanging Gardens.
 
-```
-POST /chat  {selectedSourceIds: []}
-        ▼
-prepareGrounding    retrieval SKIPPED entirely — no embedding call,
-                    no search; zero-source system prompt instead
-        ▼
-streamed answer     general knowledge, WITH the mandated disclosure
-                    ("this reply comes from general knowledge, not your
-                    sources…"), citation markers forbidden
-```
+1. The browser POSTs to the chat route with `selectedSourceIds: []`.
+2. `prepareGrounding` **skips retrieval entirely** — no embedding call,
+   no search; the zero-source system prompt is used instead.
+3. The answer streams from general knowledge **with** the mandated
+   disclosure ("this reply comes from general knowledge, not your
+   sources…"); citation markers are forbidden in this mode.
 
 **Recorded outcome:** the answer carried the explicit disclosure, rendered
 no chips, and created **no citation rows** — the grounded/ungrounded

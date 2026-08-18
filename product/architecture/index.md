@@ -34,6 +34,14 @@ The **why** behind each decision is not repeated here: it lives in
 diverges from the scope's ideal (`product/scope.md`), the divergence is
 stated plainly rather than papered over.
 
-Diagrams are hand-authored text in code blocks — the same convention as
-`product/feasibility.md` — so the docs site stays free of client-side
-rendering and external requests.
+## Diagrams
+
+Diagrams are **UML, authored in PlantUML**. The `.puml` sources are
+canonical in `product/architecture/diagrams/`; the committed SVGs in
+`product/architecture/assets/` are rendered artifacts, regenerated with
+`product/architecture/diagrams/render.sh` (the official PlantUML container,
+which bundles Java and Graphviz — Docker is already a project requirement
+for the local Supabase stack, so no new toolchain entry). Rendering happens
+at commit time, never at build or page-load time: the docs site stays free
+of client-side rendering and external requests, and the diagrams render on
+GitHub too. Edit the `.puml`, re-run the script, commit both files.
