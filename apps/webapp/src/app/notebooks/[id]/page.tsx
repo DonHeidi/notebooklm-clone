@@ -37,6 +37,7 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
           size="icon-sm"
           aria-label="Back to library"
           render={<Link href="/" />}
+          nativeButton={false}
         >
           <ArrowLeft />
         </Button>

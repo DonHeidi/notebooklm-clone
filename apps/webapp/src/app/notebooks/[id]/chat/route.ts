@@ -58,8 +58,13 @@ export async function POST(
 
   const body = (await request.json().catch(() => ({}))) as ChatRequestBody;
   const messages = Array.isArray(body.messages) ? body.messages : [];
+  // Non-UUID garbage would only die on the ::uuid cast in retrieval — drop
+  // it here; unknown-but-valid ids are ignored by the owner-scoped search.
+  const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const selectedSourceIds = Array.isArray(body.selectedSourceIds)
-    ? body.selectedSourceIds.filter((id) => typeof id === "string")
+    ? body.selectedSourceIds.filter(
+        (id) => typeof id === "string" && UUID_PATTERN.test(id),
+      )
     : [];
   const lastMessage = messages.at(-1);
   if (!lastMessage || lastMessage.role !== "user") {
@@ -100,6 +105,11 @@ export async function POST(
     // Simple fixed context window (CF-08 MVP); data parts are dropped by
     // convertToModelMessages, so history text keeps its [n] markers as-is.
     messages: await convertToModelMessages(messages.slice(-CHAT_HISTORY_WINDOW)),
+    // Best-effort server-side abort. Caveat (verified locally, 2026-08-18):
+    // behind the Next proxy, a mid-stream client disconnect does NOT fire
+    // this signal promptly — generation then runs to completion and the
+    // full answer persists, while the client shows the truncated view until
+    // reload. The UI-level stop always works; see the A4 handover.
     abortSignal: request.signal,
   });
 
