@@ -162,7 +162,12 @@ provider's billing currency; no exchange-rate conversion is applied.
 keeps one container instance warm, eliminating the ~4 s cold start. (The B3
 record calls this "demo mode" — accurate while the deployment *is* a demo;
 with real users it is simply a fixed operating cost, and the scenarios below
-treat it as one.) Derived from the fetched serverless prices and the
+treat it as one.) The figure below is the **scaled-to-1 floor**: exactly one
+instance (`min_scale = 1`) held warm around the clock, whether or not anyone
+uses it. It is *not* a load model — under traffic the container scales up to
+`max_scale = 2` (`infrastructure/main.tf`), and a second instance's seconds
+bill on top at the same rates, bounding the container line at ≈ 2× the
+floor. Derived from the fetched serverless prices and the
 container's Terraform sizing (1 vCPU, ~2.147 GB): a 730-hour month is
 2,628,000 s → (2,628,000 − 200,000 free) vCPU-s × €0.00001 + (2,628,000 ×
 2.147 − 400,000 free) GB-s × €0.000002 ≈ **€34.8/mo while on** — matching
@@ -172,13 +177,15 @@ the "~€35/mo" recorded in `infrastructure/variables.tf` and the B3 handover.
 
 Signup is currently a **closed circle** (see SEC-10 in
 `product/security.md`) — 10 users is a hypothetical, not a forecast. The
-two scenarios sit on different stacks by necessity. **Scenario (b)
-(realistic) runs with no always-on system, on Supabase Free and Azure F0,
-at $0 in tier fees** — the free allowances cover its volumes. **Scenario
-(a) (ceiling) exceeds what the free tiers can carry** — beyond Azure F0's
-free character allowance and Supabase Free's storage cap you have to pay
-for the tiers that can serve the load (Azure S1, Supabase Pro), so the
-ceiling totals include those as required, not optional, costs. The
+two scenarios differ in which tiers can carry them, but share one premise:
+**with real users you do not let the container go cold** — the always-warm
+floor (≈ €34.8/mo, scaled to 1; derivation above) is a fixed cost in both.
+**Scenario (b) (realistic) fits the free service tiers**: Supabase Free and
+Azure F0 cover its volumes at $0 in tier fees. **Scenario (a) (ceiling)
+exceeds what the free tiers can carry** — beyond Azure F0's free character
+allowance and Supabase Free's storage cap you have to pay for the tiers
+that can serve the load (Azure S1, Supabase Pro), so the ceiling totals
+include those as required, not optional, costs. The
 model prices each user action from the constants in the merged code, then
 runs two scenarios. Fetched prices used (2026-08-18): Scaleway
 `mistral-small-3.2-24b-instruct-2506` **€0.15/M input, €0.35/M output**
@@ -213,6 +220,7 @@ guarantee* — the app cannot spend more than this on inference:
 | --- | --- | --- | --- |
 | **Fixed (independent of usage within the scenario)** | | | |
 | Edge Services | — | unchanged | €4.99 |
+| Always-warm container (floor) | — | real users mean the container never goes cold; scaled-to-1 floor, derivation in the previous section | €34.8 |
 | Supabase | — | this load forces the Pro tier (storage, below) | $25 |
 | Azure S1 / Generative APIs | — | no standing fee — both are pure pay-per-use; they appear only under Variable | $0 / €0 |
 | **Variable (scales with usage — the quota-bounded consumption)** | | | |
@@ -220,9 +228,9 @@ guarantee* — the app cannot spend more than this on inference:
 | Query embeddings | 15M tokens | 300,000 × 50 | ≈ €1.50 |
 | Audio scripts | 3,000 overviews | 10/user/day (`MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY`, `audio-overview-service.ts`) × 10 × 30 | ≈ €4 |
 | TTS | 15M characters | 3,000 × 5,000 chars | ≈ **$225** — requires the paid S1 tier; the free F0 tier hard-stops at 0.5M chars/month (~100 overviews), 30× below what the app's own quotas would allow |
-| Container compute at this load | ~1.5M vCPU-s | 300,000 requests × ~5 s each (assumption) | ≈ €19 |
+| Container burst scaling at this load | up to a 2nd instance | 300,000 requests × ~5 s each (assumption) ≈ 1.5M vCPU-s of work — mostly absorbed by the warm instance; bursts scale to `max_scale = 2` and bill on top, bounded at ≈ one more floor | ≈ €0–35 |
 | *One-time, not monthly:* ingestion filling every slot once | 10,000 max-size sources | 50 sources/notebook (`MAX_SOURCES_PER_NOTEBOOK`, `limits.ts`) × 20 notebooks × 10 users | ≈ €296 one-time — but see the storage note: unreachable in practice |
-| **Ceiling total** | | fixed **€4.99 + $25** · variable **≈ €348.5 + $225** — i.e. **≈ €34.9 + $22.50 per user** at the ceiling | **≈ €350 + $250 per month** (≈ €330 of it chat inference) |
+| **Ceiling total** | | fixed **≈ €39.8 + $25** · variable **≈ €329.5–364.5 + $225** — i.e. **≈ €33–36 + $22.50 per user** at the ceiling | **≈ €370–405 + $250 per month** (≈ €330 of it chat inference) |
 
 **Scenario (b) — a stated realistic assumption.** Assume each of the 10
 users sends **N = 10 chat messages/day**, ingests **2 typical (~5,000-word)
@@ -233,24 +241,26 @@ ingestion/audio rates are assumptions, not measurements:
 | --- | --- | --- |
 | **Fixed (independent of usage within the scenario)** | | |
 | Edge Services | — | €4.99 |
-| Supabase Free / Azure F0 | — | $0 |
-| Container | — | €0 — this scenario runs with no always-on system (scale-to-zero; an always-warm instance would add €34.8, derivation above) |
+| Always-warm container (floor) | — | €34.8 — real users mean the container never goes cold (scaled-to-1 floor, derivation above); this load stays far below one instance's capacity, so no burst scaling |
+| Supabase Free / Azure F0 | — | $0 — the free tiers cover this scenario's volumes |
 | **Variable (scales with usage)** | | |
 | Chat completions (LLM) | 3,000 turns | ≈ €3.26 |
 | Query embeddings | 0.15M tokens | ≈ €0.02 |
 | Ingestion embeddings | ~87 sources ≈ 0.64M tokens | ≈ €0.06 |
 | Audio scripts | 20 overviews | ≈ €0.03 |
 | TTS | 100,000 characters | **$0** on the current F0 tier (under its 500,000 free chars/month); would be ≈ $1.50 on S1 |
-| Container compute | ~15,000 vCPU-s | €0 (within the 200,000 vCPU-s monthly free tier) |
-| **Realistic total** | | fixed **€4.99** · variable **≈ €3.37** — i.e. **≈ €0.34 per user per month** → **≈ €8.4/mo** all-in (an always-warm instance would raise it to ≈ €43/mo) |
+| Container compute | ~15,000 vCPU-s of work | €0 extra — absorbed by the warm instance already paid for in the floor |
+| **Realistic total** | | fixed **≈ €39.8** · variable **≈ €3.37** — i.e. **≈ €0.34 per user per month** on top of the fixed base → **≈ €43/mo** all-in |
 
-The punchline of scenario (b): at realistic 10-user usage, **the entire
-variable bill (≈ €3.4/mo, ≈ €0.34 per user) is smaller than the €4.99 Edge
-Services subscription** — fixed subscriptions dominate, and the marginal
-cost of one more realistic user is cents. Model inference is not where this
-architecture's money goes; the quotas exist to keep the *ceiling*
-scenario — where the variable side is two orders of magnitude larger and
-per-user cost rises to ≈ €35 + $22 — impossible to reach by accident.
+The punchline of scenario (b): at realistic 10-user usage, **the fixed base
+(≈ €39.8/mo — the warm container floor plus the Edge subscription) is more
+than ten times the entire variable bill (≈ €3.4/mo, ≈ €0.34 per user)**.
+Serving real users costs a fixed ~€40 before the first token is generated;
+the marginal cost of one more realistic user is cents. Model inference is
+not where this architecture's money goes; the quotas exist to keep the
+*ceiling* scenario — where the variable side is two orders of magnitude
+larger and per-user cost rises to ≈ €35 + $22 — impossible to reach by
+accident.
 
 **Non-inference ceilings (what actually breaks first at 10 users):**
 
