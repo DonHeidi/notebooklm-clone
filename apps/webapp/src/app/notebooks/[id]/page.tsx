@@ -3,19 +3,22 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { listSourcesAction } from "@/app/notebooks/[id]/sources/actions";
+import { listArtifactsAction } from "@/app/notebooks/[id]/studio/actions";
 import { NotebookTitle } from "@/components/notebook-title";
 import { NotebookWorkspace } from "@/components/chat/notebook-workspace";
 import { NotesSection } from "@/components/notes/notes-section";
+import { StudioPanel } from "@/components/studio/studio-panel";
 import { Button } from "@/components/ui/button";
 import { requireUser } from "@/server/auth";
+import { DEFAULT_VOICE, VOICE_OPTIONS } from "@/server/audio/voices";
 import { loadConversation, toUIMessages } from "@/server/services/chat-service";
 import { getNotebook } from "@/server/services/notebook-service";
 
 export const metadata = { title: "Notebook — Marginalia" };
 
 // Notebook workspace shell (ui-research §1 shell, §2 three-column layout).
-// Sources + Chat are live (A3/A4); the Studio column carries the notes
-// section (A5) with D2's artifact area mounting above it.
+// Sources + Chat are live (A3/A4); the Studio column hosts generated
+// artifacts (D2) above the notes section (A5).
 export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) {
   const { id } = await props.params;
   const user = await requireUser();
@@ -66,7 +69,11 @@ export default async function NotebookPage(props: PageProps<"/notebooks/[id]">) 
             className="flex w-72 shrink-0 flex-col rounded-xl border bg-card"
           >
             <h2 className="border-b px-4 py-2.5 text-sm font-medium">Studio</h2>
-            {/* D2's artifact area mounts here, above the notes section. */}
+            <StudioPanel
+              notebookId={notebook.id}
+              voices={{ options: VOICE_OPTIONS, defaults: DEFAULT_VOICE }}
+              initialArtifacts={await listArtifactsAction(notebook.id)}
+            />
             <NotesSection notebookId={notebook.id} />
           </section>
         </NotebookWorkspace>

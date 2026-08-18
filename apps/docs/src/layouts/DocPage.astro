@@ -5,7 +5,7 @@ import Base from "./Base.astro";
 import { repo } from "../nav";
 
 interface Props {
-  entry: CollectionEntry<"product"> | CollectionEntry<"handovers">;
+  entry: CollectionEntry<"product"> | CollectionEntry<"handovers"> | CollectionEntry<"history">;
   /** Repo-relative path of the source file, e.g. `product/scope.md`. */
   sourcePath: string;
   title: string;
