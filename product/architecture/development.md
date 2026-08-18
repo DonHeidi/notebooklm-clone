@@ -1,0 +1,113 @@
+# Development view — how the code is organized
+
+> **Status:** Snapshot as of **2026-08-18** (session C5). Describes the
+> monorepo layout, the layer rule, testing, toolchain, and CI as merged.
+> The authoritative working rules live in the `AGENTS.md` files; this page
+> maps them, it does not replace them.
+
+## Monorepo layout
+
+Bun-managed workspaces (`apps/*`, `packages/*` — root `package.json`):
+
+```
+notebooklm-clone/
+├── apps/
+│   ├── webapp/          Next.js fullstack app (the product)
+│   ├── docs/            Astro static docs site (this site)
+│   └── marketing/       Astro static marketing site
+├── packages/            shared workspace packages (still empty)
+├── supabase/            migrations (ONE timestamp-ordered timeline:
+│   │                    drizzle-generated + hand-written), config.toml
+├── infrastructure/      Terraform for Scaleway
+├── product/             scope, feasibility, security, history, these views
+├── handovers/           one note per working session
+└── .github/workflows/   ci.yml, deploy-webapp.yml, deploy-static-sites.yml
+```
+
+## The layer rule (DDD path)
+
+Every webapp feature must be traceable straight through
+(`apps/webapp/AGENTS.md`):
+
+```
+app view                src/app/**/page.tsx, src/components/**
+  ▼
+URL path                App Router route / route handler / server action
+  ▼                     (src/app/**/actions.ts, **/route.ts; src/proxy.ts)
+business layer          src/server/services/*.ts
+  ▼
+repository              src/server/repositories/*.ts   ← the ONLY layer
+  ▼                                                      that touches db
+database                src/server/db/ (Drizzle client + schema.ts)
+                        → supabase/migrations/ (generated + hand-written)
+```
+
+**Where it is enforced:** by convention and review, not tooling — the rule
+is stated in `apps/webapp/AGENTS.md` (repository pattern mandatory; UI,
+route handlers, and actions never import `db` directly) and checked in
+every PR review. The code shape supports it: repositories are factory
+functions taking a `Database`, so services accept injected dependencies and
+tests never need the real connection; everything under `src/server/` is
+server-only; the `ownerId` parameter on every repository method is the
+standing SEC-5 review item.
+
+## Testing strategy
+
+- `bun test` from the repo root sweeps all workspaces (root `AGENTS.md`).
+  80 tests pass as of A4's merge.
+- Pure logic (chunking offsets, grounding/marker extraction, route access)
+  is tested directly — the modules are deliberately framework-free.
+- Database-backed tests (repositories, ingestion pipeline, hybrid search)
+  run against **PGlite** with pgvector
+  (`src/server/db/create-test-database.ts`): the *actual* migration
+  timeline from `supabase/migrations/` is applied via drizzle's journal, so
+  tests also validate the generated SQL. Supabase-only migrations (RLS,
+  extension placement) are intentionally not applied — authorization under
+  test is the app-layer scoping. I/O boundaries (embedder, file loader,
+  HTML fetcher) are injectable fakes; no test touches the network.
+- **Pending migration — D-9** (`product/feasibility.md`, decided
+  2026-08-18, [PR #23](https://github.com/DonHeidi/notebooklm-clone/pull/23),
+  not yet implemented): DB-backed tests move to a real Postgres container,
+  because PGlite under Bun exits 99 despite passing tests and its cold WASM
+  init blows CI hook timeouts. Until it lands, `ci.yml` carries two interim
+  workarounds (below).
+
+## Toolchain
+
+| Tool | Role | Rule |
+| --- | --- | --- |
+| **Bun** | package manager, script runner, test runner | **Never pin versions from memory** — always `bun add` (root `AGENTS.md`); production webapp runtime is Node, not Bun (D-1) |
+| **mise** | pins Bun, Terraform, Supabase CLI (`mise.toml`) | `mise exec -- <tool>` when not activated |
+| **varlock** | env schema (`.env.schema`, committed) | secrets only in Proton Pass → untracked `.env.local`; run env-dependent commands via `bunx varlock run --` |
+| **drizzle-kit** | generates SQL migrations into `supabase/migrations/` | `generate`, **never `push`** (D-3: push drops the HNSW operator class) |
+
+## Conventions
+
+- **Sessions and worktrees:** each session has one goal, works on a branch
+  in a git worktree under `.worktrees/`, never on `main`, and ends in a PR,
+  review, and a handover note in `handovers/`.
+- **Conventional commits** with Angular types; branches
+  `<type>/<short-kebab-topic>`.
+- **Correct the record:** a claim disproved by later work is fixed at its
+  source in the same change; historical documents get dated correction
+  blockquotes, never silent rewrites (root `AGENTS.md`; the convention's
+  origin story is in `product/history/process.md`).
+
+## CI (`.github/workflows/ci.yml`)
+
+Runs on every PR and push to `main`, two parallel jobs
+([PR #13](https://github.com/DonHeidi/notebooklm-clone/pull/13), B2):
+
+```
+checks:    lint (webapp) → typecheck (next typegen + tsc) →
+           bun test --timeout 30000 → build all apps
+terraform: terraform fmt -check → terraform validate (-backend=false,
+           no credentials)
+```
+
+The webapp build gets obviously-fake `NEXT_PUBLIC_SUPABASE_*` placeholders —
+CI only proves compilation, artifacts are discarded. The test step accepts
+exactly one non-zero signature: exit 99 with a `0 fail` summary (the
+PGlite-under-Bun quirk); any other failure fails the job. Both the exit-99
+allowlist and the raised timeout are marked interim and disappear when D-9
+lands.
