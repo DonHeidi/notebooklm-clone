@@ -406,3 +406,25 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# --- Hosted demo project (session B3) ----------------------------------------
+# Overrides applied on top of the base config when pushing to the hosted
+# project with `supabase config push` (linked ref must match project_id).
+# Everything not overridden here is pushed from the base sections above —
+# notably [auth].enable_confirmations = false (email confirmation OFF for the
+# demo: hosted has no SMTP/mail catcher, so confirmation emails would be
+# undeliverable beyond Supabase's 2/hour built-in mailer) and the
+# [auth.rate_limit] values (SEC-7: 30 sign-in/sign-ups per 5 min per IP).
+[remotes.demo]
+project_id = "ahphkkvsofqmxkqzbica"
+
+[remotes.demo.auth]
+# Public URL of the deployed webapp container (Scaleway, fr-par).
+site_url = "https://marginalia6bb21b06-marginalia-webapp.functions.fnc.fr-par.scw.cloud"
+additional_redirect_urls = ["https://marginalia6bb21b06-marginalia-webapp.functions.fnc.fr-par.scw.cloud"]
+
+[remotes.demo.auth.email]
+# Keep hosted's stricter defaults for flows the demo does not use
+# (confirmation emails are off; the built-in mailer is capped at 2/hour).
+max_frequency = "1m0s"
+otp_length = 8
