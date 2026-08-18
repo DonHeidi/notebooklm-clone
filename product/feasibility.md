@@ -226,6 +226,54 @@ generation (D-4 LLM) → `synthesize()` → Storage upload → artifact row +
 Realtime status (SF-09). Chunking, if a script ever exceeds one request,
 lives *inside* the adapter, not in the pipeline.
 
+### D-9 — Database-backed tests run against real Postgres in a local container, replacing PGlite
+
+**Decided with the project owner, 2026-08-18. Not yet implemented — until it
+lands, the interim CI workarounds below stay in place.**
+
+The webapp's repository and ingestion-pipeline tests currently run against
+PGlite (`@electric-sql/pglite`, in-process WASM Postgres, built in A1's
+`createTestDatabase()`, extended by A3). B2's CI surfaced two
+Bun-runtime-specific problems with that setup, both reproduced minimally and
+verified against Node on 2026-08-18 (Bun 1.3.14 + pglite 0.5.5, both current):
+
+1. **Exit code 99 despite passing tests.** Any process that instantiates a
+   PGlite client exits with code 99 under Bun — plain `bun run` as well as
+   `bun test` with a `0 fail` summary; closing the client makes no
+   difference; the identical code exits 0 under Node. Local runs never
+   noticed (nobody checks `$?` of a green-looking run by hand); CI failed on
+   it immediately.
+2. **Cold-init flakiness.** The first `new PGlite()` (WASM compile)
+   intermittently exceeds Bun's default 5 s per-test/hook timeout on GitHub
+   runners, failing a test file's `beforeAll` as `(fail) (unnamed)` —
+   nondeterministic across runs on identical code.
+
+Interim workarounds live in `.github/workflows/ci.yml`: the test step accepts
+exactly the `exit 99` + `0 fail` signature (every other nonzero exit still
+fails) and runs `bun test --timeout 30000`. Both are masking tape, and the
+exit-99 allowlist in particular means a hypothetical failure mode that sets
+exit 99 without failing a test would slip through.
+
+**Decision:** database-backed tests move to a **real Postgres (with pgvector)
+running in a local container**, applying the same `supabase/migrations`
+timeline that `createTestDatabase()` applies today. This removes the whole
+WASM-under-Bun quirk class instead of patching around it, and tests the real
+engine — including real pgvector rather than the PGlite port, which matters
+before S-2/A4 lean on HNSW + RRF behavior. The trade-offs accepted: tests
+need Docker (or `supabase start`) available, per-test-file isolation needs a
+scheme (template database, schema-per-file, or transaction rollback) instead
+of PGlite's cheap throwaway instances, and CI needs a Postgres service
+container.
+
+Implementation notes for whichever session picks this up (test infra is
+A-lane's surface): the choice between a plain `pgvector/pgvector` image and
+the already-pinned Supabase CLI stack (`supabase start`, whose Postgres ships
+pgvector and matches hosted Supabase closest) is left to that session — the
+repo already pins `supabase` in `mise.toml`, which weighs in favor of the
+Supabase stack. On completion, remove both CI workarounds
+(the exit-99 guard and the raised timeout) and delete this paragraph's
+"not yet implemented" marker.
+
 ## Architecture (resulting shape)
 
 ```text
@@ -265,6 +313,7 @@ observed in the real product (`product/ui-research.md` §4).
 | Supabase Queues (pgmq) GA label unconfirmed | Low | Launched 2024-12, dashboard-integrated; acceptable for prototype |
 | Generative-APIs model EOL rotation; org-level rate limits need payment method on file | Low | Loose model pinning behind D-4 abstraction; register payment method |
 | `bun test` lacks `--filter`/globs; `mock.module` scoping bugs | Low | Root `bun test` sweeps workspaces; avoid module-mock-heavy test design |
+| PGlite under Bun: exit 99 with 0 failures; cold WASM init blows the 5 s hook timeout on CI runners (found in B2) | Medium | **D-9 decided 2026-08-18**: move DB-backed tests to real Postgres in a local container. Interim: CI allowlists the exact exit-99 signature and runs `--timeout 30000` — both removed when D-9 lands |
 | Local pgvector version may differ from hosted (0.8 features: iterative scans) | Low | Check `extversion` in S-2; avoid 0.8-only features initially |
 | Azure TTS (D-8) chosen on docs only — German/English voice quality never auditioned (no API key in spike D1) | Medium | First step of D2: create an F0 key, audition `de-DE-Seraphina/Florian/Katja` + en-US candidates before wiring the pipeline; runner-up ElevenLabs and self-host fallback stand ready behind the `TtsProvider` interface |
 | Azure DragonHD voices unavailable in Germany West Central (West Europe / Sweden Central only); voice catalog churns | Low | Standard neural voices suffice for MVP and exist in all three EU regions; pin `westeurope`; churn absorbed by the D-8 abstraction |
