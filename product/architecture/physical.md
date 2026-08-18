@@ -8,6 +8,10 @@
 > **Not yet real:** hosted Supabase (B3 pending — the webapp's data plane
 > runs against the *local* Supabase stack today) and Azure Speech (D-8
 > decided, wiring is D2's in-flight work).
+>
+> **Update (2026-08-18, session B3):** both of the above are now real — see
+> *Hosted Supabase (B3)* at the end of this document.
+
 > **Extended 2026-08-18** (session C6): "Platform choice" section added,
 > referencing decision D-10.
 
@@ -21,6 +25,7 @@ interchangeable (the same Docker image, S3-compatible storage driven by
 The decision, a per-building-block AWS interchange map verified against
 the code and workflows, and its honest caveats are recorded as **D-10**
 in `product/feasibility.md`.
+
 
 ## Topology
 
@@ -84,3 +89,21 @@ join the container's secret environment variables.*
 The schema also already declares the D2 surface (`TTS_PROVIDER`,
 `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` — D-8), ahead of the in-flight
 wiring.
+
+## Hosted Supabase (B3, 2026-08-18)
+
+The webapp's data plane is hosted since session B3: Supabase project
+`marginalia` (ref `ahphkkvsofqmxkqzbica`, **eu-west-3 / Paris** — colocated
+with the fr-par container; **Free tier**, owner decision — the idle-pause
+trade-off is recorded in `product/feasibility.md`). The full
+`supabase/migrations` timeline is applied (8 tables + RLS, HNSW + FTS
+indexes, `sources`/`artifacts` buckets; pgvector 0.8.2, identical to local).
+Hosted auth config is code: the `[remotes.demo]` section of
+`supabase/config.toml`, pushed with `supabase config push` (email+password
+signup on, email confirmation off for the demo, site URL = the container
+endpoint). The container now receives `NEXT_PUBLIC_SUPABASE_URL`/`ANON_KEY`,
+`AZURE_SPEECH_REGION`, `TTS_PROVIDER` as plain env and
+`SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL` (transaction pooler, port 6543,
+`prepare: false`), `AZURE_SPEECH_KEY`, `SCW_GENERATIVE_APIS_KEY` as secret
+env, all via Terraform; `min_scale` is the `webapp_min_scale` tfvar
+(0 idle / 1 for demo windows).

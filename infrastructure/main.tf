@@ -62,22 +62,35 @@ resource "scaleway_container_namespace" "main" {
 # `bunx varlock run -- ./infrastructure/scripts/push-webapp.sh <tag>`
 # then `terraform apply -var webapp_image_tag=<tag>`.
 resource "scaleway_container" "webapp" {
-  name                   = "${var.project_name}-webapp"
-  namespace_id           = scaleway_container_namespace.main.id
-  image                  = "${scaleway_registry_namespace.main.endpoint}/webapp:${var.webapp_image_tag}"
-  port                   = 3000
-  cpu_limit              = 1000
-  memory_limit_bytes     = 2 * 1024 * 1024 * 1024
-  min_scale              = 0 # spike S-1 measures cold starts; demo mode (B3) raises this
+  name         = "${var.project_name}-webapp"
+  namespace_id = scaleway_container_namespace.main.id
+  image        = "${scaleway_registry_namespace.main.endpoint}/webapp:${var.webapp_image_tag}"
+  port         = 3000
+  cpu_limit    = 1000
+  # The API rounds 2 GiB (2147483648) down to 2147000000; using the stored
+  # value keeps plans drift-free (B2 gotcha 5).
+  memory_limit_bytes     = 2147000000
+  min_scale              = var.webapp_min_scale # 0 idle / 1 for demo windows (B3)
   max_scale              = 2
   timeout                = 300
   https_connections_only = true
 
+  # NEXT_PUBLIC_* are inlined into the client bundle at image build time (see
+  # deploy-webapp.yml build args); they are also set here for server-side
+  # reads. Both are publishable values (SEC-6): access is enforced by RLS,
+  # not by hiding the anon key.
   environment_variables = {
-    SCW_GENERATIVE_APIS_BASE_URL = "https://api.scaleway.ai/${var.scw_project_id}/v1"
+    SCW_GENERATIVE_APIS_BASE_URL  = "https://api.scaleway.ai/${var.scw_project_id}/v1"
+    NEXT_PUBLIC_SUPABASE_URL      = var.supabase_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY = var.supabase_anon_key
+    AZURE_SPEECH_REGION           = var.azure_speech_region
+    TTS_PROVIDER                  = var.tts_provider
   }
 
   secret_environment_variables = {
-    SCW_GENERATIVE_APIS_KEY = var.generative_apis_key
+    SCW_GENERATIVE_APIS_KEY   = var.generative_apis_key
+    SUPABASE_SERVICE_ROLE_KEY = var.supabase_service_role_key
+    DATABASE_URL              = var.database_url
+    AZURE_SPEECH_KEY          = var.azure_speech_key
   }
 }
