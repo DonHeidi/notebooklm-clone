@@ -226,6 +226,20 @@ generation (D-4 LLM) → `synthesize()` → Storage upload → artifact row +
 Realtime status (SF-09). Chunking, if a script ever exceeds one request,
 lives *inside* the adapter, not in the pipeline.
 
+> **Audition note (2026-08-18, session D2).** Voices auditioned by the
+> project owner with real F0-tier generations (~30 s identical script per
+> language, realtime endpoint): `de-DE-Seraphina/FlorianMultilingualNeural`,
+> `de-DE-KatjaNeural`, `en-US-AndrewNeural`, `en-US-AvaNeural`. **Verdict:
+> Azure standard neural quality accepted for the MVP; defaults are
+> `de-DE-SeraphinaMultilingualNeural` (German) and `en-US-AndrewNeural`
+> (English).** No ElevenLabs escalation; DragonHD stays the optional
+> upgrade. One correction to this decision's parameters: **the Speech
+> resource lives in `swedencentral`, not `westeurope`** — Azure declined
+> new customers in West Europe at provisioning time
+> (`RequestDisallowedByAzure`); Sweden Central is the other EU region with
+> DragonHD German voices, so all selection criteria hold. All five
+> audition voices confirmed GA there.
+
 ## Architecture (resulting shape)
 
 ```text
