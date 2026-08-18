@@ -164,7 +164,7 @@ export function createSourceRepository(database: Database) {
     // Hybrid retrieval (feasibility F-3): pgvector cosine over the HNSW index
     // fused with Postgres full-text on the generated fts column via
     // reciprocal rank fusion. Implemented as a Drizzle sql template (not a
-    // database function) so PGlite tests exercise the exact production query
+    // database function) so DB-backed tests exercise the exact production query
     // and the logic stays visible in the repository layer.
     async hybridSearchChunks(
       params: HybridSearchParams,
@@ -231,8 +231,8 @@ export function createSourceRepository(database: Database) {
         limit ${limit}
       `;
 
-      // db.execute returns rows directly on postgres-js but { rows } on the
-      // PGlite driver used in tests — normalize.
+      // db.execute returns rows directly on postgres-js; the { rows } fallback
+      // dates from the retired PGlite test driver (D-9) — kept as a cheap guard.
       const executed = (await database.execute(query)) as
         | Record<string, unknown>[]
         | { rows: Record<string, unknown>[] };
