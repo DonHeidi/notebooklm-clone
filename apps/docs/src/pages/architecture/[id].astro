@@ -1,0 +1,27 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+import { architecturePages } from "../../nav";
+
+export async function getStaticPaths() {
+  return architecturePages.map((page) => ({
+    params: { id: page.id },
+    props: { page },
+  }));
+}
+
+interface Props {
+  page: (typeof architecturePages)[number];
+}
+
+const { page } = Astro.props;
+const entry = await getEntry("architecture", page.id);
+if (!entry) throw new Error(`product/architecture/${page.id}.md not found`);
+---
+
+<DocPage
+  entry={entry}
+  sourcePath={`product/architecture/${page.id}.md`}
+  title={`${page.label} — Marginalia Docs`}
+  description={`4+1 architecture, ${page.label.toLowerCase()}: ${page.text}`}
+/>

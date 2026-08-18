@@ -1,0 +1,16 @@
+---
+import { getEntry } from "astro:content";
+import DocPage from "../../layouts/DocPage.astro";
+
+// Unlike /history/ (whose overview is authored here), the architecture
+// section has a canonical index.md in product/architecture/ — render it.
+const entry = await getEntry("architecture", "index");
+if (!entry) throw new Error("product/architecture/index.md not found");
+---
+
+<DocPage
+  entry={entry}
+  sourcePath="product/architecture/index.md"
+  title="Architecture — Marginalia Docs"
+  description="The Kruchten 4+1 architectural views of Marginalia: logical, process, development, and physical views plus scenarios — accurate to the code as merged, every claim traceable."
+/>
