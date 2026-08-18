@@ -37,7 +37,9 @@ const { title, description } = Astro.props;
       <SiteHeader />
       <div class="mx-auto w-full max-w-6xl flex-1 px-5 sm:px-8 lg:flex lg:gap-12">
         <aside class="hidden w-56 shrink-0 py-10 lg:block">
-          <div class="sticky top-10">
+          <div
+            class="sticky top-10 max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain pr-2"
+          >
             <SiteNav />
           </div>
         </aside>
