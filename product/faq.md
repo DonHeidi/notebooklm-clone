@@ -74,8 +74,9 @@ By design: the target is **the prototype end state** — the grounded-chat
 core loop plus Audio Overview — and the roadmap carries an explicit cut list
 (YouTube/Drive ingestion, sharing, research modes, mind maps, and more)
 that stays catalogued in the research document rather than getting stub UI. The
-smallest product that genuinely captures NotebookLM is Phase 1, and that
-is what is built.
+smallest product that genuinely captures NotebookLM is the targeted
+version defined in [target-scope.md](target-scope.md), and that is what
+is built.
 → [roadmap.md](roadmap.md)
 
 ## How was this built in seven days?
