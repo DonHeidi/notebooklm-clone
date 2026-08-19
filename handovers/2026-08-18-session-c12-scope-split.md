@@ -131,4 +131,13 @@ PR. No new dependencies; `bun.lock`, root `package.json` untouched.
   whichever session ships or cuts a delivered item updates the research
   badges **and** the target table in the same change (stated in
   target-scope.md's header).
+
+  > **Correction (2026-08-19, session C13):** superseded by owner decision.
+  > Mirroring the research catalog's statuses is exactly what made the
+  > target page read as half-implemented, so C13 removed implementation
+  > status from `product/scope.md` entirely — status table, evidence
+  > column and all per-item status blockquotes — and re-baselined
+  > `product/target-scope.md` against the v1 target. The update discipline
+  > is now single-file: a session that ships or cuts a delivered item
+  > updates `target-scope.md` only. The research catalog carries no status.
 - After merge: foreman dispatches `deploy-static-sites`.
