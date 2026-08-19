@@ -12,6 +12,7 @@ function canonicalRoute(path) {
   const fixed = [
     [/(?:^|\/)feasibility\.md$/, "/decisions/"],
     [/(?:^|\/)scope\.md$/, "/product/scope/"],
+    [/(?:^|\/)target-scope\.md$/, "/product/target-scope/"],
     [/(?:^|\/)ui-research\.md$/, "/product/ui-research/"],
     [/(?:^|\/)in-numbers\.md$/, "/product/in-numbers/"],
     [/(?:^|\/)roadmap\.md$/, "/roadmap/"],

@@ -131,7 +131,8 @@ export async function getNavGroups(): Promise<NavGroup[]> {
     {
       label: "Product",
       items: [
-        { href: "/product/scope/", label: "Scope" },
+        { href: "/product/scope/", label: "Research catalog" },
+        { href: "/product/target-scope/", label: "Target scope" },
         { href: "/product/ui-research/", label: "UI research" },
         { href: "/product/in-numbers/", label: "In numbers" },
       ],

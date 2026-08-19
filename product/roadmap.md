@@ -2,7 +2,7 @@
 
 > **Status:** Adopted 2026-08-17. Living document — extend or reorder whenever
 > we want; the dependency graph is the contract, not the day numbers.
-> **End state:** Phase 1 core loop (sources → grounded chat → inline
+> **End state:** the core loop (sources → grounded chat → inline
 > citations → source navigation → notes) **plus Audio Overview** as the
 > differentiator, demoable at day 7 with the webapp deployed on Scaleway.
 > **Unit of planning:** the **session** — one goal, one branch in a worktree,
@@ -50,7 +50,7 @@ lanes need a shared `main`. **Blocks everything.**
 
 | ID | Branch | Goal | Depends on |
 | --- | --- | --- | --- |
-| A1 | `feat/domain-schema` | Phase 1 domain model as Drizzle migrations: notebooks, sources, chunks (with location metadata for citations), conversations, messages, citations, notes; `vector` extension + RLS groundwork in `supabase/migrations`; repositories per aggregate. | S-0 |
+| A1 | `feat/domain-schema` | Core-loop domain model as Drizzle migrations: notebooks, sources, chunks (with location metadata for citations), conversations, messages, citations, notes; `vector` extension + RLS groundwork in `supabase/migrations`; repositories per aggregate. | S-0 |
 | A2 | `feat/auth-library` | `@supabase/ssr` auth, RLS policies, notebook library screen (create/rename/delete/open — CF-01, SF-02). | A1 |
 | A3 | `feat/ingestion` | Upload (TUS → Supabase Storage) + pasted text + URL sources; parse→chunk→embed **in-process** (feasibility D-2 stage 1); sources panel with Realtime status; basic source viewer. Formats: PDF, TXT/MD, URL (DOCX only if mammoth drops in trivially). | A1 (A2 for RLS wiring) |
 | A4 | `feat/grounded-chat` | Hybrid-search retrieval (RRF), streaming chat (AI SDK, SSE), source-selection checkboxes + "N sources" counter, citations as streamed data parts, zero-source disclosure mode (ui-research §4). | A3 |
@@ -113,5 +113,7 @@ Source Guide (CF-04) · server-side stop + regenerate response (CF-08) ·
 queued, recoverable job infrastructure (SF-09 — the prototype runs
 feasibility D-2 stage 1 in-process instead).
 
-Everything cut remains in `product/scope.md` (research phases 2–5) and can
-be appended here as new sessions whenever we choose.
+Everything cut remains catalogued in the research document
+(`product/scope.md` — its §8 groupings are reading-order clusters, not a
+plan) and can be appended here as new sessions whenever we choose; the
+targeted version this cut list protects is `product/target-scope.md`.
