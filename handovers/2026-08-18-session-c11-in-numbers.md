@@ -99,3 +99,23 @@ None — no new dependencies; `bun.lock`, root `package.json` untouched.
 - If a future session adds users/telemetry, scenario (b)'s assumptions
   (N=10 msgs/day etc.) should be replaced with measured rates.
 - After merge: foreman dispatches `deploy-static-sites`.
+
+> **Correction, 2026-08-19 (session C14,
+> `handovers/2026-08-19-session-c14-in-numbers-cost-model.md`):** two claims
+> above no longer describe the page.
+> (1) **Terminology.** "Scenario (a) / (b)" and the "ceiling total" /
+> "realistic total" names were removed on owner review — they had no decision
+> value and were not comparable across tables. They are now **assumption set
+> A (quota ceiling)** and **assumption set B (moderate usage)**, each with an
+> explicit inputs table, and every cost table on the page closes with the
+> same four rows (fixed/variable cost of the system, fixed/variable cost per
+> user). The open item still stands, read as "assumption set B's inputs".
+> (2) **The chunk-storage figure was optimistic.** The page's "500 MB holds
+> roughly 50–60k chunks (~8 KB per `vector(2000)`)" counted the raw embedding
+> only. Including chunk text, the generated `tsvector`, and the HNSW index
+> entry, a chunk costs ≈ 19.3 KB — so Free's 500 MB holds ≈ 26,000 chunks
+> ≈ 1,260 typical sources, and its 1 GB of *file* storage (≈ 1,000 sources)
+> is the tighter constraint. C11's conclusion — that Supabase storage, not
+> tokens, binds first — is unchanged and if anything reinforced.
+> (3) Part 2's prices were all re-fetched 2026-08-19 and were **unchanged**
+> since C11's 2026-08-18 fetch; C11's ops figures were correct as computed.

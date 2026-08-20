@@ -1,12 +1,14 @@
 # Marginalia in numbers
 
-> **Status:** Snapshot as of **2026-08-18** (session C11). Every price on this
-> page was fetched from the provider's published pricing page on that date —
-> the source URL and retrieval date sit next to each figure, and **prices
-> change**; re-run the method in the appendix to refresh. Every other figure
-> is either **computed** from the session transcripts (development) or
-> **derived** from constants in the merged code (operations), or an
-> **assumption** labeled as one. No number on this page comes from memory.
+> **Status:** Snapshot as of **2026-08-19** (Part 1 computed 2026-08-18,
+> session C11; Part 2 rebuilt as a pricing/ROI basis in session C14, with
+> every price re-fetched 2026-08-19). Every price on this page was fetched
+> from the provider's published pricing page on the stated date — the source
+> URL and retrieval date sit next to each figure, and **prices change**;
+> re-run the method in the appendix to refresh. Every other figure is either
+> **computed** from the session transcripts (development) or **derived** from
+> constants in the merged code (operations), or an **assumption** labeled as
+> one. No number on this page comes from memory.
 
 This page answers two questions the rest of the docs don't: what did it cost
 to have AI agent sessions build this prototype, and what does it cost to run?
@@ -18,9 +20,12 @@ to have AI agent sessions build this prototype, and what does it cost to run?
   pay-per-token list prices — a comparable, reproducible measure, not an
   invoice.
 - **Operating cost** is the running monthly bill as deployed today, plus a
-  transparent model — not a guess — of what 10 active users would cost,
-  derived from the actual guard and quota constants in the code (the model
-  inventory itself lives in the [generative view](architecture/generative.md)).
+  transparent model — not a guess — of what a user costs and how the bill
+  develops from 1 to 1,000 users, derived from the actual guard and quota
+  constants in the code (the model inventory itself lives in the
+  [generative view](architecture/generative.md)). Part 2 is built to be read
+  as the basis for a price: every table there decomposes into the same four
+  rows, so the numbers are comparable across tables.
 
 ---
 
@@ -140,145 +145,293 @@ part of this table.
 
 ## Part 2 — What it costs to run
 
-### Today's bill (as deployed, 2026-08-18)
+This part exists to support a price. It answers three questions and nothing
+else: what does the system cost before any user exists; what does one more
+user cost, split into what they cost by *existing* and what they cost by
+*using*; and how does that change as the user count grows.
+
+### How to read every table in this part
+
+Every cost table below — today's deployment, each usage-assumption set, and
+each column of the growth view — ends with the **same four rows, identically
+labeled**, so figures can be compared across tables without re-reading the
+prose:
+
+| Row | Definition |
+| --- | --- |
+| **Fixed cost of the system** | Incurred regardless of user count and regardless of usage: subscriptions and always-on capacity. Here: the Edge Services plan, the always-warm container floor, and any provider tier fee that the deployment has been forced onto (a tier fee is fixed *once you are on that tier* — the tier change itself is a step in user count, named where it lands). |
+| **Variable cost of the system** | Scales with total usage but is not attributable to any one user: burst container instances above the always-warm floor. |
+| **Fixed cost per user** | Incurred per existing user regardless of their activity — the standing footprint of their retained sources, chunks and embeddings. |
+| **Variable cost per user** | The marginal cost of one user's activity: chat turns, ingestion, audio. **This is the number a per-user price has to beat**, before any contribution to the fixed base. |
+
+Two consequences of these definitions are worth stating up front, because
+they are where the money actually is:
+
+- **The container floor is a fixed cost of the system, not an option.** The
+  deployment can scale to zero (and does today, with no users), but with real
+  users you do not let it go cold — a ~4 s cold start on the first request of
+  every idle period is not a product. Every table below except "today's
+  deployment" therefore carries the always-warm floor as a fixed cost.
+- **Fixed cost per user is ~€0/$0 on the tiers in use, and that is a
+  property of the tiers, not of the app.** Supabase Free and Pro bundle
+  storage as an *allowance*, not a meter: a user's retained sources cost
+  nothing extra until the allowance is exhausted, at which point the whole
+  project steps to the next tier and the marginal rate ($0.125/GB-month
+  database, $0.0213/GB-month file storage) begins to apply. So the per-user
+  standing cost is zero, then a fraction of a cent — but the *step* it
+  triggers is one of the larger jumps on the page. Both effects are shown in
+  the growth view.
+
+Line items are in each provider's billing currency; **no exchange-rate
+conversion is applied**, so totals carry a € part and a $ part.
+
+### Today's deployment (2026-08-19)
 
 The deployed footprint is in the
 [physical view](architecture/physical.md); the resources below are
-Terraform-managed in `infrastructure/` unless noted. Line items are in each
-provider's billing currency; no exchange-rate conversion is applied.
+Terraform-managed in `infrastructure/` unless noted. There are no users yet
+(signup is a closed circle — see below), and `webapp_min_scale` is `0` in the
+deployed state (`infrastructure/variables.tf`), so this table is the only one
+on the page without the always-warm floor.
 
 | Line item | Monthly cost | Where it's on record |
 | --- | --- | --- |
-| Scaleway Edge Services — Starter plan (1 pipeline) + 1 extra pipeline for the second static site | **€0.99 + €4.00 = €4.99** | `infrastructure/domain.tf` (`scaleway_edge_services_plan` + 2 pipelines); price verified 2026-08-18 against [scaleway.com/en/pricing/network](https://www.scaleway.com/en/pricing/network/) — Starter €0.99/mo incl. 1 pipeline, additional pipeline €4/mo, egress free |
-| Webapp container (`min_scale = 0`, scale-to-zero) | **≈ €0 idle** | `infrastructure/main.tf` (1000 mvCPU, 2,147,000,000 B); Scaleway bills only consumed vCPU-s/GB-s, with 200,000 vCPU-s + 400,000 GB-s free per month ([scaleway.com/en/pricing/serverless](https://www.scaleway.com/en/pricing/serverless/), fetched 2026-08-18) — idle at zero scale consumes nothing |
+| Scaleway Edge Services — Starter plan (1 pipeline) + 1 extra pipeline for the second static site | **€0.99 + €4.00 = €4.99** | `infrastructure/domain.tf` (`scaleway_edge_services_plan` + 2 pipelines); [scaleway.com/en/pricing/network](https://www.scaleway.com/en/pricing/network/) (fetched 2026-08-19) — Starter €0.99/mo incl. 1 pipeline, additional pipeline €4/mo, **bandwidth unlimited**, 100 GB cache storage included |
+| Webapp container (`min_scale = 0`, scale-to-zero) | **≈ €0 idle** | `infrastructure/main.tf` (1000 mvCPU, 2,147,000,000 B); Scaleway bills only consumed vCPU-s/GB-s, with 200,000 vCPU-s + 400,000 GB-s free per month ([scaleway.com/en/pricing/serverless](https://www.scaleway.com/en/pricing/serverless/), fetched 2026-08-19) — idle at zero scale consumes nothing |
 | Apex-redirect function (`min_scale = 0`) | **≈ €0** | `infrastructure/domain.tf`; functions free tier: 1M requests + 400,000 GB-s/mo (same pricing page) |
-| Supabase project (Free tier) | **$0** | Not TF-priced (tier chosen in B3, `handovers/2026-08-18-session-b3-demo-env.md`); Free plan limits fetched 2026-08-18 from [supabase.com/pricing](https://supabase.com/pricing): 500 MB database, 1 GB file storage, pauses after 1 week idle |
-| Azure AI Speech (F0 free tier) | **$0** | D2/B3 record; F0 allows 0.5M neural-TTS characters/month free ([azure.microsoft.com — Speech services pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/), fetched 2026-08-18) |
-| Scaleway Generative APIs | **≈ €0 idle** | Pure pay-per-token, no standing fee ([scaleway.com/en/pricing/model-as-a-service](https://www.scaleway.com/en/pricing/model-as-a-service/), fetched 2026-08-18) |
+| Supabase project (Free tier) | **$0** | Not TF-priced (tier chosen in B3, `handovers/2026-08-18-session-b3-demo-env.md`); Free plan limits fetched 2026-08-19 from [supabase.com/pricing](https://supabase.com/pricing): 500 MB database, 1 GB file storage, 5 GB egress, 50,000 MAU, pauses after 1 week idle |
+| Azure AI Speech (F0 free tier) | **$0** | D2/B3 record; F0 allows 0.5M neural-TTS characters/month free ([azure.microsoft.com — Speech services pricing](https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/), fetched 2026-08-19) |
+| Scaleway Generative APIs | **≈ €0 idle** | Pure pay-per-token, no standing fee ([scaleway.com/en/pricing/model-as-a-service](https://www.scaleway.com/en/pricing/model-as-a-service/), fetched 2026-08-19) |
 | Object storage (3 buckets) + container registry | **≈ €0** | B2/B4 record: static-site + tfstate buckets and images are megabytes, within free allowances |
-| **Fixed total** | **€4.99/mo** | |
+| **Monthly total** | **€4.99** | |
+| **Fixed cost of the system** | **€4.99** | Edge Services only — the container floor is not paid at `min_scale = 0` |
+| **Variable cost of the system** | **≈ €0** | no traffic; scale-to-zero |
+| **Fixed cost per user** | **€0 / $0** | no users |
+| **Variable cost per user** | **€0 / $0** | no usage; the rates are in the assumption sets below |
 
-**Optional always-warm container:** `terraform apply -var webapp_min_scale=1`
-keeps one container instance warm, eliminating the ~4 s cold start. (The B3
-record calls this "demo mode" — accurate while the deployment *is* a demo;
-with real users it is simply a fixed operating cost, and the scenarios below
-treat it as one.) The figure below is the **scaled-to-1 floor**: exactly one
-instance (`min_scale = 1`) held warm around the clock, whether or not anyone
-uses it. It is *not* a load model — under traffic the container scales up to
-`max_scale = 2` (`infrastructure/main.tf`), and a second instance's seconds
-bill on top at the same rates, bounding the container line at ≈ 2× the
-floor. Derived from the fetched serverless prices and the
-container's Terraform sizing (1 vCPU, ~2.147 GB): a 730-hour month is
-2,628,000 s → (2,628,000 − 200,000 free) vCPU-s × €0.00001 + (2,628,000 ×
-2.147 − 400,000 free) GB-s × €0.000002 ≈ **€34.8/mo while on** — matching
-the "~€35/mo" recorded in `infrastructure/variables.tf` and the B3 handover.
+**The always-warm floor**, used by every table below:
+`terraform apply -var webapp_min_scale=1` holds exactly one instance warm
+around the clock. From the container's Terraform sizing (1 vCPU,
+~2.147 GB) and the fetched serverless prices, a 730-hour month is 2,628,000 s
+→ (2,628,000 − 200,000 free) vCPU-s × €0.00001 + (2,628,000 × 2.147 −
+400,000 free) GB-s × €0.000002 = **€34.76/mo** — matching the "~€35/mo"
+recorded in `infrastructure/variables.tf` and the B3 handover. A *second*
+instance (the `max_scale = 2` ceiling in `infrastructure/main.tf`) bills on
+top at the same rates, so system-variable container cost is bounded at
+€0–€34.76 no matter how much demand arrives.
 
-### Ten users, modeled
+### Per-action footprints — the rate card
 
-Signup is currently a **closed circle** (see SEC-10 in
-`product/security.md`) — 10 users is a hypothetical, not a forecast. The
-two scenarios differ in which tiers can carry them, but share one premise:
-**with real users you do not let the container go cold** — the always-warm
-floor (≈ €34.8/mo, scaled to 1; derivation above) is a fixed cost in both.
-**Scenario (b) (realistic) fits the free service tiers**: Supabase Free and
-Azure F0 cover its volumes at $0 in tier fees. **Scenario (a) (ceiling)
-exceeds what the free tiers can carry** — beyond Azure F0's free character
-allowance and Supabase Free's storage cap you have to pay for the tiers
-that can serve the load (Azure S1, Supabase Pro), so the ceiling totals
-include those as required, not optional, costs. The
-model prices each user action from the constants in the merged code, then
-runs two scenarios. Fetched prices used (2026-08-18): Scaleway
-`mistral-small-3.2-24b-instruct-2506` **€0.15/M input, €0.35/M output**
-tokens; `qwen3-embedding-8b` **€0.10/M tokens**
-([scaleway.com/en/pricing/model-as-a-service](https://www.scaleway.com/en/pricing/model-as-a-service/));
-Azure standard neural TTS (S1) **$15.00/1M characters** in `swedencentral`
-(Azure Retail Prices API,
-[prices.azure.com](https://prices.azure.com/api/retail/prices?%24filter=armRegionName%20eq%20%27swedencentral%27%20and%20contains%28meterName,%27Neural%27%29),
-meter "S1 Neural Text To Speech Characters", fetched 2026-08-18).
-Token-count conversions use the ~4 characters ≈ 1 token ≈ 0.75 words rule of
-thumb (as stated on Anthropic's pricing page FAQ; an approximation across
-tokenizers — labeled assumption).
-
-**Per-action footprints** (constants cited from code):
+This is a **rate card, not a cost table**: it prices one action, so the four
+standard rows do not apply to it. Every cost table above and below is built
+from these unit costs times a volume. Constants are cited from the merged
+code; the token/character prices were fetched 2026-08-19 (Scaleway
+`mistral-small-3.2-24b-instruct-2506` **€0.15/M input, €0.35/M output**;
+`qwen3-embedding-8b` **€0.10/M tokens**; Azure standard neural TTS (S1)
+**$15.00/1M characters** in `swedencentral`, from the Azure Retail Prices API
+meter "S1 Neural Text To Speech Characters"). Token-count conversions use the
+~4 characters ≈ 1 token ≈ 0.75 words rule of thumb (as stated on Anthropic's
+pricing page FAQ; an approximation across tokenizers — labeled assumption).
 
 | Action | Tokens / characters | Derivation | Cost per action |
 | --- | --- | --- | --- |
 | One grounded chat turn — LLM input | ≈ 6,500 tokens | 10 retrieved chunks × 400 tokens (`RETRIEVAL_LIMIT`, `src/server/services/chat-service.ts`; `CHUNK_SIZE_TOKENS`, `src/server/ingestion/chunking.ts`) = 4,000 hard cap, + 12-message history window (`CHAT_HISTORY_WINDOW`) at an *assumed* ~150 tokens/message = 1,800, + system prompt & question ≈ 700 (assumption) | €0.00098 |
 | One grounded chat turn — LLM output | ≈ 300 tokens (assumption) | typical answer length | €0.00011 |
 | One grounded chat turn — query embedding | ≈ 50 tokens (assumption) | one user question | €0.000005 |
-| **One chat turn, total** | | | **≈ €0.0011** |
+| **One chat turn, total** | | | **≈ €0.00109** |
 | Ingesting one source at the caps | ≈ 296,000 embedding tokens | 200,000 words max (`MAX_SOURCE_WORDS`, `src/server/ingestion/limits.ts`) × 4/3 tokens/word × 400/360 chunk-overlap factor (`CHUNK_OVERLAP_TOKENS = 40`) | ≈ €0.030 |
-| Ingesting a typical ~5,000-word source | ≈ 7,400 embedding tokens | same formula | ≈ €0.0007 |
-| One audio overview — script LLM | ≈ 6,400 in / ≈ 1,070 out | 24,000-char source budget (`TOTAL_SOURCE_CHAR_BUDGET`, `src/server/audio/script.ts`) ÷ 4 + prompt; output 600–800 words by prompt contract | ≈ €0.0013 |
+| Ingesting a typical ~5,000-word source | ≈ 7,400 embedding tokens | same formula | ≈ €0.00074 |
+| One audio overview — script LLM | ≈ 6,400 in / ≈ 1,070 out | 24,000-char source budget (`TOTAL_SOURCE_CHAR_BUDGET`, `src/server/audio/script.ts`) ÷ 4 + prompt; output 600–800 words by prompt contract | ≈ €0.00133 |
 | One audio overview — TTS | ≈ 5,000 characters (assumption: ~700 words × ~6 chars/word + SSML markup; billed per SSML character) | script contract in `audio-overview-service.ts`; billing per `charactersBilled`, `src/server/audio/azure-tts.ts` | ≈ $0.075 |
+| Standing footprint of one retained typical source | ≈ 0.40 MB database + ≈ 1 MB file storage | 6,667 tokens ÷ (400 − 40) = 19 chunks; per chunk ≈ 19.3 KB all-in (8,008 B `vector(2000)` at 4 B/dim + ~1.6 KB text + ~1 KB `tsvector` + ~8.2 KB HNSW index entry + ~0.4 KB GIN/btree — index sizes are assumptions), + ~30 KB of `sources.content`. File storage assumes a ~1 MB upload for a 5,000-word document (`MAX_FILE_BYTES` caps it at 20 MB) | metered only above the tier allowance — see the growth view |
 
-**Scenario (a) — quota ceiling.** All 10 users max every daily quota every
-day for a 30-day month. This is the *hard upper bound the A6 quotas
-guarantee* — the app cannot spend more than this on inference:
+> The chunk footprint above supersedes the 2026-08-18 estimate on this page
+> ("roughly 50–60k chunks" in 500 MB, "a few hundred typical sources"). That
+> figure counted the raw embedding only; with index and text included the
+> Free tier's 500 MB holds ≈ 26,000 chunks ≈ 1,260 typical sources, and its
+> 1 GB of file storage — the tighter of the two — holds ≈ 1,000.
 
-| Item | Volume | Derivation | Monthly cost |
-| --- | --- | --- | --- |
-| **Fixed (independent of usage within the scenario)** | | | |
-| Edge Services | — | unchanged | €4.99 |
-| Always-warm container (floor) | — | real users mean the container never goes cold; scaled-to-1 floor, derivation in the previous section | €34.8 |
-| Supabase | — | this load forces the Pro tier (storage, below) | $25 |
-| Azure S1 / Generative APIs | — | no standing fee — both are pure pay-per-use; they appear only under Variable | $0 / €0 |
-| **Variable (scales with usage — the quota-bounded consumption)** | | | |
-| Chat completions | 300,000 turns | 20 notebooks/user (`MAX_NOTEBOOKS_PER_USER`, `notebook-service.ts`) × 50 messages/notebook/day (`MAX_CHAT_MESSAGES_PER_NOTEBOOK_PER_DAY`, `chat-service.ts`) × 10 users × 30 days | ≈ €324 |
-| Query embeddings | 15M tokens | 300,000 × 50 | ≈ €1.50 |
-| Audio scripts | 3,000 overviews | 10/user/day (`MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY`, `audio-overview-service.ts`) × 10 × 30 | ≈ €4 |
-| TTS | 15M characters | 3,000 × 5,000 chars | ≈ **$225** — requires the paid S1 tier; the free F0 tier hard-stops at 0.5M chars/month (~100 overviews), 30× below what the app's own quotas would allow |
-| Container burst scaling at this load | up to a 2nd instance | 300,000 requests × ~5 s each (assumption) ≈ 1.5M vCPU-s of work — mostly absorbed by the warm instance; bursts scale to `max_scale = 2` and bill on top, bounded at ≈ one more floor | ≈ €0–35 |
-| *One-time, not monthly:* ingestion filling every slot once | 10,000 max-size sources | 50 sources/notebook (`MAX_SOURCES_PER_NOTEBOOK`, `limits.ts`) × 20 notebooks × 10 users | ≈ €296 one-time — but see the storage note: unreachable in practice |
-| **Ceiling total** | | fixed **≈ €39.8 + $25** · variable **≈ €329.5–364.5 + $225** — i.e. **≈ €33–36 + $22.50 per user** at the ceiling | **≈ €370–405 + $250 per month** (≈ €330 of it chat inference) |
+### Assumption set A — the quota ceiling
 
-**Scenario (b) — a stated realistic assumption.** Assume each of the 10
-users sends **N = 10 chat messages/day**, ingests **2 typical (~5,000-word)
-sources/week**, and generates **2 audio overviews/month**. N and the
-ingestion/audio rates are assumptions, not measurements:
+**What it assumes** (this is the hard upper bound the A6 quotas guarantee —
+the app cannot spend more than this on inference, whatever a user does):
+
+| Input | Value | Source |
+| --- | --- | --- |
+| Chat turns per user per day | 1,000 | 20 notebooks (`MAX_NOTEBOOKS_PER_USER`, `notebook-service.ts`) × 50 messages/notebook/day (`MAX_CHAT_MESSAGES_PER_NOTEBOOK_PER_DAY`, `chat-service.ts`) — every quota maxed, every day |
+| Audio overviews per user per day | 10 | `MAX_AUDIO_OVERVIEWS_PER_USER_PER_DAY`, `audio-overview-service.ts` |
+| Ingestion | every slot filled once | 50 sources/notebook (`MAX_SOURCES_PER_NOTEBOOK`, `limits.ts`) × 20 notebooks — one-time, not monthly |
+| Users | 10 | hypothetical (see the closed-signup caveat below) |
+| Month | 30 days | assumption |
+| Horizon | month 12 of operation | Supabase Pro is already forced from month 2 at this load |
 
 | Item | Volume | Monthly cost |
 | --- | --- | --- |
-| **Fixed (independent of usage within the scenario)** | | |
 | Edge Services | — | €4.99 |
-| Always-warm container (floor) | — | €34.8 — real users mean the container never goes cold (scaled-to-1 floor, derivation above); this load stays far below one instance's capacity, so no burst scaling |
-| Supabase Free / Azure F0 | — | $0 — the free tiers cover this scenario's volumes |
-| **Variable (scales with usage)** | | |
-| Chat completions (LLM) | 3,000 turns | ≈ €3.26 |
-| Query embeddings | 0.15M tokens | ≈ €0.02 |
+| Always-warm container floor | — | €34.76 |
+| Supabase Pro tier fee | — | $25 — forced at this load: 300,000 chat turns/month write ≈ 450 MB of message rows per month (assumption: ~1.5 KB per question + answer pair), so the Free tier's 500 MB database is gone inside two months |
+| Azure AI Speech S1 / Scaleway Generative APIs | — | $0 / €0 — both are pure pay-per-use with no standing fee; they appear under the variable rows |
+| Burst container instance | up to 1 extra | €0–€34.76 — bounded by `max_scale = 2` |
+| Chat completions + query embeddings | 300,000 turns | ≈ €325.50 |
+| Audio scripts | 3,000 overviews | ≈ €4.00 |
+| TTS | 15M characters | **$225** — requires the paid S1 tier; F0 hard-stops at 0.5M chars/month (~100 overviews), 30× below what the app's own quotas allow |
+| *One-time, not monthly:* filling every ingestion slot | 10,000 max-size sources | ≈ €296 of embeddings once — unreachable in practice: 10,000 × 20 MB = 200 GB of uploads, twice Supabase Pro's whole 100 GB storage allowance |
+| **Monthly total** | | **≈ €369–404 + $250** |
+| **Fixed cost of the system** | | **€39.75 + $25** |
+| **Variable cost of the system** | | **€0–€34.76** |
+| **Fixed cost per user** | | **$0** — 10 users' message rows reach ≈ 5.4 GB after 12 months, still inside Pro's 8 GB allowance (it crosses around month 18) |
+| **Variable cost per user** | | **€32.95 + $22.50** (chat €32.55 + audio scripts €0.40; TTS 1.5M chars) |
+
+### Assumption set B — moderate usage
+
+**What it assumes.** The volumes here are stated assumptions, not
+measurements — there is no telemetry (see the caveat below).
+
+| Input | Value | Source |
+| --- | --- | --- |
+| Chat turns per user per day | 10 | assumption |
+| Sources ingested per user | 2 per week ≈ 8.7/month, ~5,000 words each | assumption |
+| Audio overviews per user | 2 per month | assumption |
+| Users | 10 | hypothetical |
+| Month | 30 days | assumption |
+| Horizon | months 1–11 of operation | the storage-driven Supabase Free → Pro step lands in month 12 at this user count; the growth view below shows the bill after it |
+
+| Item | Volume | Monthly cost |
+| --- | --- | --- |
+| Edge Services | — | €4.99 |
+| Always-warm container floor | — | €34.76 |
+| Supabase Free / Azure F0 tier fees | — | $0 — both free tiers carry this load (see the growth view for when they stop) |
+| Burst container instances | none | €0 — peak demand is ~0.03 requests in flight (derivation in the growth view); one warm instance absorbs it |
+| Chat completions + query embeddings | 3,000 turns | ≈ €3.26 |
 | Ingestion embeddings | ~87 sources ≈ 0.64M tokens | ≈ €0.06 |
 | Audio scripts | 20 overviews | ≈ €0.03 |
-| TTS | 100,000 characters | **$0** on the current F0 tier (under its 500,000 free chars/month); would be ≈ $1.50 on S1 |
-| Container compute | ~15,000 vCPU-s of work | €0 extra — absorbed by the warm instance already paid for in the floor |
-| **Realistic total** | | fixed **≈ €39.8** · variable **≈ €3.37** — i.e. **≈ €0.34 per user per month** on top of the fixed base → **≈ €43/mo** all-in |
+| TTS | 100,000 characters | **$0** on F0 (under its 500,000 free chars/month); would be ≈ $1.50 on S1 |
+| **Monthly total** | | **≈ €43.10** |
+| **Fixed cost of the system** | | **€39.75** |
+| **Variable cost of the system** | | **€0** |
+| **Fixed cost per user** | | **€0 / $0** — inside the Free tier's allowances for the first ~11 months (see the growth view) |
+| **Variable cost per user** | | **€0.335 + $0** (chat €0.326 + ingestion €0.006 + audio script €0.003; TTS free on F0, ≈ $0.15/user on S1) |
 
-The punchline of scenario (b): at realistic 10-user usage, **the fixed base
-(≈ €39.8/mo — the warm container floor plus the Edge subscription) is more
-than ten times the entire variable bill (≈ €3.4/mo, ≈ €0.34 per user)**.
-Serving real users costs a fixed ~€40 before the first token is generated;
-the marginal cost of one more realistic user is cents. Model inference is
-not where this architecture's money goes; the quotas exist to keep the
-*ceiling* scenario — where the variable side is two orders of magnitude
-larger and per-user cost rises to ≈ €35 + $22 — impossible to reach by
-accident.
+**The shape of the bill at moderate usage:** the fixed base (€39.75/mo) is
+**twelve times the entire variable bill** (€3.35/mo). Serving real users
+costs ~€40 before the first token is generated, and the marginal cost of one
+more moderate user is about a third of a euro. Inference is not where this
+architecture's money goes at this scale — the quotas exist so the *set A*
+world, where the variable side is two orders of magnitude larger, cannot be
+reached by accident.
 
-**Non-inference ceilings (what actually breaks first at 10 users):**
+### Cost development over user count
 
-- **Supabase Free storage (1 GB) is the binding constraint, not tokens.**
-  The app-level caps allow a *single* user 20 notebooks × 50 sources × 20 MB
-  = 20 GB of uploads — twenty times the whole project's Free-tier storage.
-  SEC-10 in `product/security.md` records this precisely (~50 max-size
-  objects fill the tier) along with the abuse implications; the closed
-  signup circle is the load-bearing control. Sustained 10-user use forces
-  the **Pro tier at $25/mo** (8 GB database + 100 GB storage included,
-  fetched 2026-08-18 from [supabase.com/pricing](https://supabase.com/pricing)) —
-  which also removes the pauses-after-1-week-idle behavior.
-- **The 500 MB Free-tier database** holds roughly 50–60k chunks (each
-  `vector(2000)` embedding is ~8 KB before index overhead) — a few hundred
-  typical sources; Pro's 8 GB moves that ceiling out of sight.
-- **Azure F0** caps audio at ~100 overviews/month project-wide; the app's
-  quotas allow 3,000. First user growth step on the audio feature is the S1
-  tier (pay-per-character, no standing fee).
+Assumption set B, evaluated at **month 12 of operation** at each user count
+(a horizon has to be stated because the standing footprint accumulates: at
+8.7 retained sources per user per month, a user's storage is the one cost
+that grows with tenure, not just with headcount). Tier steps are named in the
+column where they land.
+
+| | **1 user** | **10 users** | **100 users** | **1,000 users** |
+| --- | --- | --- | --- | --- |
+| Retained sources (month 12) | 104 | 1,044 | 10,440 | 104,400 |
+| Database / file storage | 0.04 GB / 0.10 GB | 0.41 GB / **1.04 GB** | 4.1 GB / 10.4 GB | **41.2 GB** / **104.4 GB** |
+| Supabase tier in force | Free | **Pro — Free's 1 GB file storage is exhausted in month 12** | Pro (crossed in month 2) | Pro + compute add-on (crossed on day 4) |
+| Azure Speech tier in force | F0 | F0 | **S1 — F0's 0.5M chars/month is exhausted at 50 users** | S1 |
+| Peak requests in flight | 0.003 | 0.03 | 0.28 | 2.8 |
+| **Monthly total** | **≈ €40.09** | **≈ €43.10 + $25** | **≈ €73.21 + $40** | **≈ €374–409 + $194–239** |
+| **Fixed cost of the system** | **€39.75** | **€39.75 + $25** | **€39.75 + $25** | **€39.75 + $25 + $15–60** (compute add-on — assumption, see below) |
+| **Variable cost of the system** | **€0** | **€0** | **€0** | **€0–€34.76** (second instance; `max_scale = 2` bound) |
+| **Fixed cost per user** | **€0 / $0** | **€0 / $0** | **€0 / $0** | **$0.0042** (33.2 GB of database over Pro's 8 GB × $0.125 + 4.4 GB of files over 100 GB × $0.0213 = $4.23, ÷ 1,000) |
+| **Variable cost per user** | **€0.335 + $0** | **€0.335 + $0** | **€0.335 + $0.15** | **€0.335 + $0.15** |
+
+**What is linear and what is a step.** This distinction is the point of the
+table:
+
+- **Linear in user count** — the variable cost per user (chat, ingestion,
+  audio script, and TTS once on S1) is strictly proportional: €0.335/user/mo
+  at every step above, because each user's actions are priced per token and
+  per character with no allowance and no floor.
+- **Piecewise linear** — the fixed cost per user (standing storage) is
+  exactly $0 while it fits the tier's allowance, then linear in
+  users × tenure at $0.125/GB-month (database) + $0.0213/GB-month (files).
+  Zero at 1–100 users, $0.0042/user/mo at 1,000.
+- **Step functions** — three, all named in the table:
+  1. **Supabase Free → Pro, +$25/mo.** Triggered by the *cumulative*
+     footprint, so it is a function of user-months, not users: the tighter
+     of the two allowances (1 GB of file storage ÷ ~1 MB per source ÷ 8.7
+     sources per user-month) is exhausted after **≈ 115 user-months** —
+     month 12 at 10 users, month 2 at 100, **day 4** at 1,000.
+  2. **Azure F0 → S1, at exactly 50 users.** A per-month, not cumulative,
+     boundary: 0.5M free characters ÷ 10,000 characters per user-month. S1
+     has no standing fee, so this step does not raise the fixed cost at all
+     — it converts a $0 line into a linear one at $0.15/user/mo. Everyone's
+     audio starts costing money on the day the 51st user's overview is
+     generated.
+  3. **Supabase compute add-on.** Pro's $10/mo credit covers one Micro
+     instance. At 1,000 users the chunk table holds ≈ 2.0M rows and its HNSW
+     index alone is ≈ 16 GB, far past what a Micro instance can keep
+     resident while every chat turn runs a vector search — so a Small ($15)
+     or Medium ($60) instance is assumed. **This is the one figure in the
+     table that is a judgment rather than a derivation**; it is unmeasured
+     and needs a load test, and it is why the 1,000-user total is given as a
+     range.
+- **Flat at every step** — Edge Services (€4.99: bandwidth unlimited, 100 GB
+  of cache included on Starter, so no user count in this range moves it) and
+  the container floor (€34.76 by definition).
+
+**Where a price has to land.** Reading the last two rows together: a moderate
+user costs **€0.335 + $0.15 per month in pure marginal cost**, plus their
+share of the fixed base, spread over the headcount: ≈ **€39.75** for one
+user (still on the free tiers), ≈ **€3.98 + $2.50** at 10, ≈ **€0.40 +
+$0.25** at 100, ≈ **€0.04 + $0.04–0.09** at 1,000. The fixed base is what a
+price must amortize — and it is the dominant term until roughly 100 users,
+past which the marginal cost per user takes over. The marginal cost is what a
+price must never fall below.
+
+### The capacity ceiling, stated as a finding
+
+`max_scale = 2` (`infrastructure/main.tf`) caps the deployment at two
+instances of 1 vCPU / 2 GB, whatever the demand. That is a deliberate cost
+guard, and it is also a hard capacity limit — past it the system does not get
+more expensive, it gets slower and then fails. Extrapolating a bill past it
+would be fiction, so the growth view stops where it does. Two derived
+statements:
+
+- **Under assumption set B, the ceiling is not the first constraint at 1,000
+  users.** Assuming 20% of a day's chat turns fall in the peak hour
+  (assumption) and a turn holds a request slot for ~5 s (assumption), 1,000
+  users generate 10,000 turns/day → 2,000 in the peak hour → **≈ 2.8
+  requests in flight**. Two instances plausibly serve that; whether they do
+  is **unmeasured** — per-request CPU has never been profiled under load, and
+  that measurement is the prerequisite for extending this table to 10,000
+  users.
+- **Under assumption set A, the ceiling binds around 100 users.** The same
+  arithmetic gives ≈ 2.8 requests in flight at 10 users but **≈ 28 at 100** —
+  beyond what two 1-vCPU instances can be assumed to stream. Set A at 100
+  users is therefore not a ≈ €3,300 + $2,300 bill; it is a deployment that
+  stops serving. Raising `max_scale` turns the container line from a bounded
+  €0–€34.76 into a linear-in-demand cost, and that is the change an ROI
+  reader should price, not the ceiling itself.
+
+### What else binds before the bill does
+
+- **Signup is a closed circle** (SEC-10, `product/security.md`). Every user
+  count on this page is a hypothetical, not a forecast.
+- **Storage caps, not tokens, are the first thing to break.** The app-level
+  caps allow a *single* user 20 notebooks × 50 sources × 20 MB
+  (`MAX_FILE_BYTES`) = 20 GB of uploads — twenty times the whole project's
+  Free-tier storage, and SEC-10 records the abuse implications (~50 max-size
+  objects fill the tier). The closed signup circle is the load-bearing
+  control; the growth view above assumes users behave like assumption set B,
+  not like the caps.
+- **Supabase Free pauses after 1 week of inactivity.** Irrelevant while
+  users are active, but it means the Free tier is not a resting state for
+  anything with a public URL.
+- **Monthly active users are not a cost at this scale.** Free includes
+  50,000 MAU and Pro 100,000 before the $0.00325/MAU rate applies (fetched
+  2026-08-19) — 50–100× beyond the largest step modeled, so MAU never enters
+  the fixed-cost-per-user row.
+- **Egress stays inside the allowances.** At 1,000 users, audio downloads are
+  the largest egress item at ≈ 4.8 GB/month (2 overviews/user × ~2.4 MB per
+  ~5-minute file — assumption), against Pro's 250 GB; Edge Services bandwidth
+  is unlimited on all plans.
 
 ---
 
@@ -315,18 +468,60 @@ machine (Claude Code project directory, one `.jsonl` file per session).
    at the nearest published equivalent, flagged (not needed in this run —
    every turn was `claude-fable-5`).
 
-The ops model is the arithmetic shown inline in Part 2: per-action token
-footprints from the named code constants, times scenario volumes, times the
-fetched per-token/per-character prices.
+### The operating model (Part 2), step by step
 
-**Pricing sources used on this page** (all fetched **2026-08-18**):
+Everything in Part 2 is the rate card times a volume. To re-run it:
+
+1. **Unit costs.** Take the per-action footprints from the named code
+   constants and multiply by the fetched per-token / per-character prices:
+   one chat turn = (6,500 × €0.15 + 300 × €0.35 + 50 × €0.10) / 10⁶ =
+   **€0.001085**; one typical ingestion = 5,000 words × 4/3 × 400/360 ×
+   €0.10/10⁶ = **€0.00074**; one audio script = (6,400 × €0.15 + 1,070 ×
+   €0.35) / 10⁶ = **€0.001334**; one audio TTS = 5,000 × $15/10⁶ =
+   **$0.075**.
+2. **Container floor** (fixed, system): `(730 × 3600 − 200,000) × €0.00001 +
+   (730 × 3600 × 2.147 − 400,000) × €0.000002 = €34.76`. A second instance
+   costs the same again; `max_scale = 2` bounds it there.
+3. **Variable cost per user** = Σ (per-action cost × that user's monthly
+   action count). Set B: `10 × 30 × €0.001085 + (2 × 52/12) × €0.00074 +
+   2 × €0.001334 = €0.3346`, plus `2 × 5,000 = 10,000` TTS characters
+   (billed only above the F0 allowance). Set A: `1,000 × 30 × €0.001085 +
+   10 × 30 × €0.001334 = €32.95`, plus 1.5M TTS characters = $22.50.
+4. **Standing footprint per retained source** (drives fixed cost per user and
+   every storage tier step): chunks = `ceil(words × 4/3 ÷ (CHUNK_SIZE_TOKENS
+   − CHUNK_OVERLAP_TOKENS))` = 19 for a 5,000-word source; bytes per chunk =
+   row (`4 × 2000 + 8` embedding + ~1,600 text + ~960 tsvector + ~100 other)
+   + indexes (~8,200 HNSW + ~400 GIN/btree) ≈ **19.3 KB**; per source ≈
+   `19 × 19.3 KB + 30 KB` ≈ **0.40 MB** of database, plus an assumed 1 MB
+   upload in file storage.
+5. **Tier steps.** Supabase Free → Pro fires when the tighter allowance is
+   exhausted: `1 GB ÷ 1 MB per source ÷ 8.7 sources per user-month =
+   115 user-months`. Azure F0 → S1 fires at `500,000 ÷ 10,000 = 50 users`
+   (per month, not cumulative). Supabase storage overage above Pro:
+   `max(0, DB_GB − 8) × $0.125 + max(0, files_GB − 100) × $0.0213`, divided
+   by the user count for the fixed-cost-per-user row.
+6. **Growth view.** For each user count *N* at a stated horizon *M* months:
+   retained sources = `N × 8.7 × M`; derive storage and hence the tier from
+   step 5; fixed system = €4.99 + €34.76 + any tier fee; variable system =
+   the burst instance (€0–€34.76); fixed per user = step-5 overage ÷ *N*;
+   variable per user = step 3. The table on this page uses *M* = 12.
+7. **Capacity check** (not a cost — the reason the table stops at 1,000):
+   peak requests in flight = `N × turns_per_user_per_day × 0.20 × 5 s /
+   3600`, against two instances of 1 vCPU / 2 GB (`max_scale = 2`). The 20%
+   peak-hour share and the 5-second request duration are assumptions; neither
+   has been measured under load.
+
+**Pricing sources used on this page** (Part 1 fetched **2026-08-18**; all
+Part 2 prices re-fetched **2026-08-19** and unchanged since, except for the
+Supabase overage, MAU and compute-add-on rates and the Edge Services
+bandwidth/cache allowances, which are new on this page):
 
 | Provider | Page |
 | --- | --- |
 | Anthropic (Claude Fable 5 token prices, cache multipliers) | <https://platform.claude.com/docs/en/about-claude/pricing> |
 | Scaleway Generative APIs (chat + embedding models) | <https://www.scaleway.com/en/pricing/model-as-a-service/> |
 | Scaleway Serverless (containers, functions) | <https://www.scaleway.com/en/pricing/serverless/> |
-| Scaleway Network (Edge Services plans) | <https://www.scaleway.com/en/pricing/network/> |
-| Azure AI Speech (F0 free allowance) | <https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/> |
+| Scaleway Network (Edge Services plans, bandwidth, cache) | <https://www.scaleway.com/en/pricing/network/> |
+| Azure AI Speech (F0 free allowance, S0/S1 has no standing fee) | <https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/> |
 | Azure Retail Prices API (S1 neural TTS $/char, `swedencentral`) | <https://prices.azure.com/api/retail/prices> |
-| Supabase (Free/Pro tiers) | <https://supabase.com/pricing> |
+| Supabase (Free/Pro tiers, storage & MAU overage, compute add-ons) | <https://supabase.com/pricing> |
