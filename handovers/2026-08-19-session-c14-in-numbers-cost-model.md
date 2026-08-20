@@ -170,3 +170,37 @@ None. No new dependencies; `bun.lock` and root `package.json` untouched
   method would refresh it — deliberately not done here (Part 1 was out of
   scope).
 - After merge: foreman dispatches `deploy-static-sites`.
+
+> **Correction, 2026-08-20 (session C15,
+> `handovers/2026-08-20-session-c15-in-numbers-readability.md`):** four
+> claims above no longer describe the page. The *structure* C14 established
+> stands — line items resolving into four comparable rows — but the labels,
+> the currency rule and two figures changed on owner review.
+> (1) **The four row labels were renamed.** "Fixed cost of the system ·
+> variable cost of the system · fixed cost per user · variable cost per user"
+> are now **System, fixed · System, variable · Per user, standing · Per user,
+> marginal**, because "fixed" carried two different meanings across the
+> system and per-user rows and the page never said so. The definitions are
+> unchanged; only the names and an added disambiguation paragraph. The
+> verification above ("5 occurrences of *Fixed cost of the system*") should
+> be read as 5 occurrences of **System, fixed**, which still holds.
+> (2) **The mixed-currency rule was reversed.** C14's "line items are in each
+> provider's billing currency; no exchange-rate conversion is applied" made
+> every total a two-part figure (`€369–404 + $250`) that the reader had to
+> add up. Part 2 is now presented in **euro throughout**, converted at the
+> ECB euro reference rate for 2026-08-19 (**€1 = $1.1605**, fetched
+> 2026-08-20), with each dollar original kept in the note beside its line.
+> Part 1 stays in USD — it mixes no currencies. Every Part 2 total on this
+> page's "growth-model arithmetic" section is therefore restated: set A
+> ≈ **€584.67–619.43/mo**, set B **€43.10/mo**, growth view **€40.08 /
+> €64.64 / €107.67 / €541.72–615.25**.
+> (3) **Two arithmetic slips.** The audio-script unit cost is
+> (6,400 × €0.15 + 1,070 × €0.35) / 10⁶ = **€0.001335**, not €0.001334
+> (step 1 above); the Supabase storage overage
+> at 1,000 users is **$4.24**, not $4.23 (33.2 × $0.125 + 4.4 × $0.0213).
+> Neither moves a rounded total.
+> (4) **Derivations left the cost column.** C14 put each line's derivation,
+> price source and tier condition inside the cost cell. They now live in
+> numbered notes (`T1…`, `R1…`, `A1…`, `B1…`, `G1…`) under each table, and
+> the one-time ingestion row was moved out of set A's monthly table into its
+> own one-time block.
